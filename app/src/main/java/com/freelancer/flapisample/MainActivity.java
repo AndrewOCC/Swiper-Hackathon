@@ -102,6 +102,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
         // Sets up the app drawer
         mDrawerList = (ListView)findViewById(R.id.navList);mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+
         addDrawerItems();
         setupDrawer();
 
@@ -144,8 +145,15 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         });
     }
 
+
     private void setupDrawer() {
-        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, R.string.drawer_open, R.string.drawer_close) {
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerToggle = new ActionBarDrawerToggle(
+                this,                  /* host Activity */
+                mDrawerLayout,         /* DrawerLayout object */
+                R.string.drawer_open,  /* "open drawer" description */
+                R.string.drawer_close  /* "close drawer" description */
+        ) {
 
             /** Called when a drawer has settled in a completely open state. */
             public void onDrawerOpened(View drawerView) {
@@ -162,9 +170,16 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
         };
 
-        mDrawerToggle.setDrawerIndicatorEnabled(true);
+        // Set the drawer toggle as the DrawerListener
         mDrawerLayout.setDrawerListener(mDrawerToggle);
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+//        mDrawerToggle.setDrawerIndicatorEnabled(true);
+//        mDrawerLayout.setDrawerListener(mDrawerToggle);
     }
+
+    //---------- Drawer Toggle methods -----------
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
@@ -178,6 +193,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         super.onConfigurationChanged(newConfig);
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
+    //------------------------------
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -191,14 +207,31 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        // Activate the navigation drawer toggle
+        // Navigation Bar Toggle
+        //      Pass the event to ActionBarDrawerToggle, if it returns
+        //      true, then it has handled the app icon touch event
         if (mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
 
-        return super.onOptionsItemSelected(item);
+        // Other action bar items...
+        switch (item.getItemId()) {
+            case R.id.menu_settings:
+                // User chose the "Settings" item, show the app settings UI
+                return true;
+
+            case R.id.menu_refresh:
+                // User chose the "Refresh" action, refresh the list
+                onRefresh();
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
     }
 
     private void prepareApiService() {
