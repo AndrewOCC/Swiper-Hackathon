@@ -9,6 +9,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -26,13 +27,13 @@ import com.listmanager.ui.MainViewModel;
 import com.listmanager.ui.MainViewModelFactory;
 import com.listmanager.ui.TabBarAnimator;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements PanelDragListener.Host {
 
     private MainViewModel viewModel;
     private ColumnPagerAdapter columnPagerAdapter;
+    private PanelDragListener panelDragListener;
 
     private AppBarLayout appBarLayout;
-    private View tabBarContainer;
     private TextView tabLowPriority;
     private TextView tabInbox;
     private TextView tabHighPriority;
@@ -42,6 +43,12 @@ public class MainActivity extends AppCompatActivity {
     private ViewPager2 columnPager;
 
     private TabBarAnimator tabBarAnimator;
+
+    @NonNull
+    @Override
+    public ViewPager2 getViewPager() {
+        return columnPager;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
         ).get(MainViewModel.class);
 
         appBarLayout = findViewById(R.id.app_bar);
-        tabBarContainer = findViewById(R.id.tab_bar_container);
         tabLowPriority = findViewById(R.id.tab_low_priority);
         tabInbox = findViewById(R.id.tab_inbox);
         tabHighPriority = findViewById(R.id.tab_high_priority);
@@ -63,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
         settingsButton = findViewById(R.id.settings_button);
         bottomEdgeSwipeZone = findViewById(R.id.bottom_edge_swipe_zone);
         columnPager = findViewById(R.id.column_pager);
+
+        panelDragListener = new PanelDragListener(this);
 
         int selectedTabColor = resolveThemeColor(com.google.android.material.R.attr.colorPrimary);
         int unselectedTabColor = resolveThemeColor(com.google.android.material.R.attr.colorOnSurface);
@@ -94,26 +102,13 @@ public class MainActivity extends AppCompatActivity {
         int listHorizontalPadding = getResources().getDimensionPixelSize(R.dimen.list_horizontal_padding);
         int listBottomPadding = getResources().getDimensionPixelSize(R.dimen.list_bottom_padding);
         int bottomEdgeHeight = getResources().getDimensionPixelSize(R.dimen.bottom_edge_swipe_height);
-        int swipeThreshold = getResources().getDimensionPixelSize(R.dimen.panel_swipe_threshold);
-
-        PanelSwipeHandler panelSwipeHandler = new PanelSwipeHandler(this, new PanelSwipeHandler.Callback() {
-            @Override
-            public void onSwipeLeft() {
-                scrollToPanel(columnPager.getCurrentItem() - 1);
-            }
-
-            @Override
-            public void onSwipeRight() {
-                scrollToPanel(columnPager.getCurrentItem() + 1);
-            }
-        }, swipeThreshold);
 
         columnPagerAdapter = new ColumnPagerAdapter(
                 this,
                 viewModel,
                 listHorizontalPadding,
                 listBottomPadding + bottomEdgeHeight,
-                panelSwipeHandler.asRecyclerBlankAreaListener()
+                panelDragListener.asRecyclerBlankAreaListener()
         );
         columnPager.setAdapter(columnPagerAdapter);
         columnPager.setOffscreenPageLimit(2);
@@ -191,30 +186,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupPanelSwiping() {
-        int swipeThreshold = getResources().getDimensionPixelSize(R.dimen.panel_swipe_threshold);
-        PanelSwipeHandler panelSwipeHandler = new PanelSwipeHandler(this, new PanelSwipeHandler.Callback() {
-            @Override
-            public void onSwipeLeft() {
-                scrollToPanel(columnPager.getCurrentItem() - 1);
-            }
-
-            @Override
-            public void onSwipeRight() {
-                scrollToPanel(columnPager.getCurrentItem() + 1);
-            }
-        }, swipeThreshold);
-
-        View.OnTouchListener swipeListener = panelSwipeHandler.asTouchListener();
-        appBarLayout.setOnTouchListener(swipeListener);
-        tabBarContainer.setOnTouchListener(swipeListener);
-        bottomEdgeSwipeZone.setOnTouchListener(swipeListener);
+        View.OnTouchListener dragListener = panelDragListener.asTouchListener();
+        View tabBar = findViewById(R.id.tab_bar);
+        tabBar.setOnTouchListener(dragListener);
+        bottomEdgeSwipeZone.setOnTouchListener(dragListener);
         columnPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageScrollStateChanged(int state) {
                 boolean idle = state == ViewPager2.SCROLL_STATE_IDLE;
-                appBarLayout.setOnTouchListener(idle ? swipeListener : null);
-                tabBarContainer.setOnTouchListener(idle ? swipeListener : null);
-                bottomEdgeSwipeZone.setOnTouchListener(idle ? swipeListener : null);
+                tabBar.setOnTouchListener(idle ? dragListener : null);
+                bottomEdgeSwipeZone.setOnTouchListener(idle ? dragListener : null);
             }
         });
     }

@@ -51,10 +51,10 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
     private int viewWidth = 1;
     private float downX;
     private float downY;
+    private float swipeAnchorX;
     private float finalDelta;
     private float alpha;
     private boolean swiping;
-    private int swipingSlop;
     private int downPosition = ListView.INVALID_POSITION;
     private int animatingPosition = ListView.INVALID_POSITION;
     private View downView;
@@ -81,7 +81,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         Context context = recyclerView.getContext();
         ViewConfiguration configuration = ViewConfiguration.get(context);
         slop = configuration.getScaledTouchSlop();
-        minFlingVelocity = configuration.getScaledMinimumFlingVelocity() * 16;
+        minFlingVelocity = configuration.getScaledMinimumFlingVelocity();
         maxFlingVelocity = configuration.getScaledMaximumFlingVelocity();
         animationTime = context.getResources().getInteger(android.R.integer.config_shortAnimTime);
         moveBackgroundColor = ContextCompat.getColor(context, R.color.swipe_move_background);
@@ -192,12 +192,12 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                     }
                     applyBackground(activeAction, deltaX < 0);
                     swiping = true;
-                    swipingSlop = deltaX > 0 ? slop : -slop;
+                    swipeAnchorX = event.getRawX();
                     setViewPagerInputEnabled(false);
                 }
 
                 if (swiping && activeAction != null) {
-                    float translation = deltaX - swipingSlop;
+                    float translation = event.getRawX() - swipeAnchorX;
                     foregroundView.setTranslationX(translation);
                     if (activeAction.type == ItemSwipeAction.Type.DELETE) {
                         float progress = Math.min(1f, Math.abs(translation) / (viewWidth * 0.75f));
@@ -294,11 +294,18 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         activeDismissAnimations++;
 
         float targetTranslation = dismissToRight ? viewWidth : -viewWidth;
+        float currentTranslation = foreground.getTranslationX();
+        long remainingDuration = (long) (animationTime
+                * (Math.abs(targetTranslation - currentTranslation) / viewWidth));
+        if (remainingDuration < 50) {
+            remainingDuration = animationTime;
+        }
+
         foreground.animate().cancel();
         foreground.animate()
                 .translationX(targetTranslation)
                 .alpha(action.type == ItemSwipeAction.Type.DELETE ? 0f : alpha)
-                .setDuration(animationTime)
+                .setDuration(remainingDuration)
                 .setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
