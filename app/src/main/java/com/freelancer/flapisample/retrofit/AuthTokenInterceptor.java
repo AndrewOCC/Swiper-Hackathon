@@ -2,34 +2,26 @@ package com.freelancer.flapisample.retrofit;
 
 import android.util.Log;
 
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
-
 import java.io.IOException;
 
-import retrofit.RequestInterceptor;
+import okhttp3.Interceptor;
+import okhttp3.Request;
+import okhttp3.Response;
 
-/**
- * Created by neil on 9/21/15.
- *
- * A request interceptor that inserts the needed auth headers into any
- * {@link com.squareup.okhttp.Request} that needs authentication.
- *
- */
-public class AuthTokenInterceptor implements RequestInterceptor {
+public class AuthTokenInterceptor implements Interceptor {
 
-    private AuthStorage storage;
+    private final AuthStorage storage;
 
     public AuthTokenInterceptor(AuthStorage storage) {
         this.storage = storage;
     }
 
     @Override
-    public void intercept(RequestFacade request) {
-        request.addHeader(FLApiConstants.KEY_AUTH_HEADER, storage.getAuthHeader());
+    public Response intercept(Chain chain) throws IOException {
+        Request request = chain.request().newBuilder()
+                .header(FLApiConstants.KEY_AUTH_HEADER, storage.getAuthHeader())
+                .build();
         Log.w("myApp", storage.getAuthHeader());
+        return chain.proceed(request);
     }
 }
-
-

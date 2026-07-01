@@ -23,8 +23,8 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.graphics.Rect;
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
-import android.support.v7.widget.RecyclerView;
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -111,7 +111,7 @@ public class SwipeableRecyclerViewTouchListener implements RecyclerView.OnItemTo
          * If a scroll listener is already assigned, the caller should still pass scroll changes through
          * to this listener.
          */
-        mRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
                 setEnabled(newState != RecyclerView.SCROLL_STATE_DRAGGING);
@@ -175,11 +175,11 @@ public class SwipeableRecyclerViewTouchListener implements RecyclerView.OnItemTo
                     }
                 }
 
-                if (mDownView != null && mAnimatingPosition != mRecyclerView.getChildPosition(mDownView)) {
+                if (mDownView != null && mAnimatingPosition != mRecyclerView.getChildAdapterPosition(mDownView)) {
                     mAlpha = mDownView.getAlpha();
                     mDownX = motionEvent.getRawX();
                     mDownY = motionEvent.getRawY();
-                    mDownPosition = mRecyclerView.getChildPosition(mDownView);
+                    mDownPosition = mRecyclerView.getChildAdapterPosition(mDownView);
                     if (mSwipeListener.canSwipe(mDownPosition)) {
                         mVelocityTracker = VelocityTracker.obtain();
                         mVelocityTracker.addMovement(motionEvent);
