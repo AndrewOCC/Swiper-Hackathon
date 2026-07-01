@@ -19,6 +19,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.listmanager.model.ItemSwipeAction;
 import com.listmanager.model.ListCategory;
@@ -193,6 +194,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                     applyBackground(activeAction, deltaX < 0);
                     swiping = true;
                     swipingSlop = deltaX > 0 ? slop : -slop;
+                    setViewPagerInputEnabled(false);
                 }
 
                 if (swiping && activeAction != null) {
@@ -385,6 +387,9 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
             velocityTracker.recycle();
             velocityTracker = null;
         }
+        if (swiping) {
+            setViewPagerInputEnabled(true);
+        }
         downX = 0;
         downY = 0;
         downView = null;
@@ -397,6 +402,22 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         activeAction = null;
         downPosition = ListView.INVALID_POSITION;
         swiping = false;
+    }
+
+    private void setViewPagerInputEnabled(boolean enabled) {
+        View parent = recyclerView;
+        while (parent != null) {
+            if (!(parent.getParent() instanceof View)) {
+                return;
+            }
+            parent = (View) parent.getParent();
+            if (parent instanceof ViewPager2) {
+                ViewPager2 viewPager = (ViewPager2) parent;
+                viewPager.setUserInputEnabled(enabled);
+                viewPager.requestDisallowInterceptTouchEvent(!enabled);
+                return;
+            }
+        }
     }
 
     private static class PendingDismissData implements Comparable<PendingDismissData> {

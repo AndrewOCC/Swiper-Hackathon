@@ -2,15 +2,16 @@
 
 A simple Android app for triaging items across three lists using swipe gestures.
 
-Swipe items in the **Inbox** to sort them into **High Priority** (swipe left) or **Low Priority** (swipe right). Use the top tabs or swipe on the tab bar / bottom edge to switch between lists.
+Swipe items in the **Inbox** to sort them into **Low Priority** (swipe left) or **High Priority** (swipe right). Swipe between columns to see adjacent lists side by side — the tab indicator and labels animate smoothly as you move.
 
 ## Navigation
 
 Three top tabs (left to right): **Low Priority** | **Inbox** | **High Priority**
 
 - Tap a tab to switch lists
-- Swipe left/right on the tab bar or the faded bottom edge to move between lists
-- The active tab is bold and full opacity; inactive tabs are faded
+- Swipe left/right on a column, the tab bar, or the faded bottom edge to move between lists
+- Adjacent columns peek in from the sides while swiping so all three feel side by side
+- The active tab is bold with a sliding underline; inactive tabs fade as you scroll
 
 ## Architecture
 
@@ -30,9 +31,9 @@ Three top tabs (left to right): **Low Priority** | **Inbox** | **High Priority**
 
 | Current list | Swipe left | Swipe right |
 |--------------|------------|-------------|
-| Inbox | Move to High Priority | Move to Low Priority |
-| Low Priority | Restore to Inbox | Delete permanently |
-| High Priority | Move to Inbox | Move to Inbox |
+| Inbox | Move to Low Priority | Move to High Priority |
+| Low Priority | Delete permanently | Restore to Inbox |
+| High Priority | Move to Inbox | (no action) |
 
 Pull to refresh (or use the toolbar action) to reset all lists to the default sample items.
 

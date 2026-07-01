@@ -1,12 +1,12 @@
 package com.listmanager;
 
 import android.content.Intent;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -16,35 +16,35 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.CompositePageTransformer;
+import androidx.viewpager2.widget.MarginPageTransformer;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.MaterialToolbar;
-import com.listmanager.adapter.ListItemAdapter;
+import com.listmanager.adapter.ColumnPagerAdapter;
 import com.listmanager.model.ListCategory;
 import com.listmanager.ui.MainViewModel;
 import com.listmanager.ui.MainViewModelFactory;
+import com.listmanager.ui.TabBarAnimator;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final float TAB_SELECTED_ALPHA = 1f;
-    private static final float TAB_UNSELECTED_ALPHA = 0.4f;
-
     private MainViewModel viewModel;
-    private ListItemAdapter adapter;
+    private ColumnPagerAdapter columnPagerAdapter;
 
     private MaterialToolbar toolbar;
     private AppBarLayout appBarLayout;
-    private View tabBar;
+    private View tabBarContainer;
     private TextView tabLowPriority;
     private TextView tabInbox;
     private TextView tabHighPriority;
+    private View tabIndicator;
     private View bottomEdgeSwipeZone;
-    private RecyclerView recyclerView;
+    private ViewPager2 columnPager;
 
-    private int selectedTabColor;
-    private int unselectedTabColor;
+    private TabBarAnimator tabBarAnimator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,25 +59,36 @@ public class MainActivity extends AppCompatActivity {
 
         toolbar = findViewById(R.id.toolbar);
         appBarLayout = findViewById(R.id.app_bar);
-        tabBar = findViewById(R.id.tab_bar);
+        tabBarContainer = findViewById(R.id.tab_bar_container);
         tabLowPriority = findViewById(R.id.tab_low_priority);
         tabInbox = findViewById(R.id.tab_inbox);
         tabHighPriority = findViewById(R.id.tab_high_priority);
+        tabIndicator = findViewById(R.id.tab_indicator);
         bottomEdgeSwipeZone = findViewById(R.id.bottom_edge_swipe_zone);
-        recyclerView = findViewById(R.id.recycler_view);
+        columnPager = findViewById(R.id.column_pager);
 
-        selectedTabColor = resolveThemeColor(com.google.android.material.R.attr.colorPrimary);
-        unselectedTabColor = resolveThemeColor(com.google.android.material.R.attr.colorOnSurface);
+        int selectedTabColor = resolveThemeColor(com.google.android.material.R.attr.colorPrimary);
+        int unselectedTabColor = resolveThemeColor(com.google.android.material.R.attr.colorOnSurface);
 
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
+        tabBarAnimator = new TabBarAnimator(
+                tabLowPriority,
+                tabInbox,
+                tabHighPriority,
+                tabIndicator,
+                selectedTabColor,
+                unselectedTabColor
+        );
+
+        setupColumnPager();
+        setupColumnPagerEffects();
         setupEdgeToEdge();
         setupTabBar();
         setupPanelSwiping();
-        setupRecyclerView();
         observeViewModel();
     }
 
@@ -87,25 +98,88 @@ public class MainActivity extends AppCompatActivity {
         return typedValue.data;
     }
 
-    private void setupEdgeToEdge() {
-        final int listHorizontalPadding = getResources().getDimensionPixelSize(R.dimen.list_horizontal_padding);
-        final int listBottomPadding = getResources().getDimensionPixelSize(R.dimen.list_bottom_padding);
-        final int bottomEdgeHeight = getResources().getDimensionPixelSize(R.dimen.bottom_edge_swipe_height);
+    private void setupColumnPager() {
+        int listHorizontalPadding = getResources().getDimensionPixelSize(R.dimen.list_horizontal_padding);
+        int listBottomPadding = getResources().getDimensionPixelSize(R.dimen.list_bottom_padding);
+        int bottomEdgeHeight = getResources().getDimensionPixelSize(R.dimen.bottom_edge_swipe_height);
+        int swipeThreshold = getResources().getDimensionPixelSize(R.dimen.panel_swipe_threshold);
 
+        PanelSwipeHandler panelSwipeHandler = new PanelSwipeHandler(this, new PanelSwipeHandler.Callback() {
+            @Override
+            public void onSwipeLeft() {
+                scrollToPanel(columnPager.getCurrentItem() - 1);
+            }
+
+            @Override
+            public void onSwipeRight() {
+                scrollToPanel(columnPager.getCurrentItem() + 1);
+            }
+        }, swipeThreshold);
+
+        columnPagerAdapter = new ColumnPagerAdapter(
+                this,
+                viewModel,
+                listHorizontalPadding,
+                listBottomPadding + bottomEdgeHeight,
+                panelSwipeHandler.asRecyclerBlankAreaListener()
+        );
+        columnPager.setAdapter(columnPagerAdapter);
+        columnPager.setOffscreenPageLimit(2);
+        columnPager.setCurrentItem(ListCategory.INBOX.getPanelIndex(), false);
+
+        columnPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                tabBarAnimator.onPageScrolled(position, positionOffset);
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                viewModel.selectCategory(ListCategory.fromPanelIndex(position));
+            }
+        });
+    }
+
+    private void setupColumnPagerEffects() {
+        int peekPx = getResources().getDimensionPixelSize(R.dimen.column_page_peek);
+        int gapPx = getResources().getDimensionPixelSize(R.dimen.column_page_gap);
+
+        ViewGroup contentFrame = findViewById(R.id.content_frame);
+        contentFrame.setClipChildren(false);
+        columnPager.setClipChildren(false);
+        columnPager.setClipToPadding(false);
+
+        columnPager.post(() -> {
+            RecyclerView pagerRecycler = (RecyclerView) columnPager.getChildAt(0);
+            if (pagerRecycler == null) {
+                return;
+            }
+            pagerRecycler.setClipToPadding(false);
+            pagerRecycler.setClipChildren(false);
+            pagerRecycler.setPadding(peekPx, 0, peekPx, 0);
+            pagerRecycler.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
+            CompositePageTransformer transformer = new CompositePageTransformer();
+            transformer.addTransformer(new MarginPageTransformer(gapPx));
+            transformer.addTransformer((page, position) -> {
+                float absPos = Math.min(1f, Math.abs(position));
+                page.setAlpha(0.7f + (1f - absPos) * 0.3f);
+            });
+            columnPager.setPageTransformer(transformer);
+        });
+    }
+
+    private void setupEdgeToEdge() {
         ViewCompat.setOnApplyWindowInsetsListener(appBarLayout, (view, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             view.setPadding(view.getPaddingLeft(), insets.top, view.getPaddingRight(), view.getPaddingBottom());
             return windowInsets;
         });
 
-        ViewCompat.setOnApplyWindowInsetsListener(recyclerView, (view, windowInsets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(columnPager, (view, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            view.setPadding(
-                    listHorizontalPadding + insets.left,
-                    view.getPaddingTop(),
-                    listHorizontalPadding + insets.right,
-                    listBottomPadding + bottomEdgeHeight + insets.bottom
-            );
+            view.setPadding(insets.left, 0, insets.right, 0);
+            columnPagerAdapter.setPagePadding(insets.left, insets.bottom);
             return windowInsets;
         });
 
@@ -117,76 +191,57 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupTabBar() {
-        tabLowPriority.setOnClickListener(view -> viewModel.selectCategory(ListCategory.ARCHIVED));
-        tabInbox.setOnClickListener(view -> viewModel.selectCategory(ListCategory.INBOX));
-        tabHighPriority.setOnClickListener(view -> viewModel.selectCategory(ListCategory.STARRED));
+        tabLowPriority.setOnClickListener(view -> scrollToPanel(0));
+        tabInbox.setOnClickListener(view -> scrollToPanel(1));
+        tabHighPriority.setOnClickListener(view -> scrollToPanel(2));
     }
 
     private void setupPanelSwiping() {
         int swipeThreshold = getResources().getDimensionPixelSize(R.dimen.panel_swipe_threshold);
-        PanelSwipeHandler.Callback callback = new PanelSwipeHandler.Callback() {
+        PanelSwipeHandler panelSwipeHandler = new PanelSwipeHandler(this, new PanelSwipeHandler.Callback() {
             @Override
             public void onSwipeLeft() {
-                viewModel.selectPreviousPanel();
+                scrollToPanel(columnPager.getCurrentItem() - 1);
             }
 
             @Override
             public void onSwipeRight() {
-                viewModel.selectNextPanel();
+                scrollToPanel(columnPager.getCurrentItem() + 1);
             }
-        };
+        }, swipeThreshold);
 
-        PanelSwipeHandler panelSwipeHandler = new PanelSwipeHandler(this, callback, swipeThreshold);
         View.OnTouchListener swipeListener = panelSwipeHandler.asTouchListener();
-
         appBarLayout.setOnTouchListener(swipeListener);
-        tabBar.setOnTouchListener(swipeListener);
+        tabBarContainer.setOnTouchListener(swipeListener);
         bottomEdgeSwipeZone.setOnTouchListener(swipeListener);
-        recyclerView.addOnItemTouchListener(panelSwipeHandler.asRecyclerBlankAreaListener());
+        columnPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageScrollStateChanged(int state) {
+                boolean idle = state == ViewPager2.SCROLL_STATE_IDLE;
+                appBarLayout.setOnTouchListener(idle ? swipeListener : null);
+                tabBarContainer.setOnTouchListener(idle ? swipeListener : null);
+                bottomEdgeSwipeZone.setOnTouchListener(idle ? swipeListener : null);
+            }
+        });
     }
 
-    private void setupRecyclerView() {
-        adapter = new ListItemAdapter();
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(adapter);
-
-        ListItemSwipeTouchListener itemSwipeListener =
-                new ListItemSwipeTouchListener(
-                        recyclerView,
-                        viewModel::getCurrentCategoryValue,
-                        new ListItemSwipeTouchListener.Callback() {
-                            @Override
-                            public void onSwipeLeft(int position) {
-                                viewModel.swipeLeft(position);
-                            }
-
-                            @Override
-                            public void onSwipeRight(int position) {
-                                viewModel.swipeRight(position);
-                            }
-                        });
-        recyclerView.addOnItemTouchListener(itemSwipeListener);
+    private void scrollToPanel(int index) {
+        if (index < 0 || index > 2) {
+            return;
+        }
+        columnPager.setCurrentItem(index, true);
     }
 
     private void observeViewModel() {
-        viewModel.getVisibleItems().observe(this, items -> adapter.submitList(items));
-        viewModel.getCurrentCategory().observe(this, this::updateTabSelection);
-    }
-
-    private void updateTabSelection(ListCategory category) {
-        if (category == null) {
-            category = ListCategory.INBOX;
-        }
-
-        styleTab(tabLowPriority, category == ListCategory.ARCHIVED);
-        styleTab(tabInbox, category == ListCategory.INBOX);
-        styleTab(tabHighPriority, category == ListCategory.STARRED);
-    }
-
-    private void styleTab(TextView tab, boolean selected) {
-        tab.setAlpha(selected ? TAB_SELECTED_ALPHA : TAB_UNSELECTED_ALPHA);
-        tab.setTypeface(null, selected ? Typeface.BOLD : Typeface.NORMAL);
-        tab.setTextColor(selected ? selectedTabColor : unselectedTabColor);
+        viewModel.getCurrentCategory().observe(this, category -> {
+            if (category == null) {
+                return;
+            }
+            int targetIndex = category.getPanelIndex();
+            if (columnPager.getCurrentItem() != targetIndex) {
+                columnPager.setCurrentItem(targetIndex, true);
+            }
+        });
     }
 
     @Override

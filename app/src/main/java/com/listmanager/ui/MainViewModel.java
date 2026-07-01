@@ -6,7 +6,6 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 
 import com.listmanager.data.ItemRepository;
 import com.listmanager.model.ListCategory;
@@ -18,25 +17,18 @@ public class MainViewModel extends AndroidViewModel {
 
     private final ItemRepository repository;
     private final MutableLiveData<ListCategory> currentCategory = new MutableLiveData<>(ListCategory.INBOX);
-    private final LiveData<List<ListItem>> visibleItems;
 
     public MainViewModel(@NonNull Application application) {
         super(application);
         repository = new ItemRepository(application);
-        visibleItems = Transformations.switchMap(
-                currentCategory,
-                category -> repository.observeItems(
-                        category != null ? category : ListCategory.INBOX
-                )
-        );
     }
 
     public LiveData<ListCategory> getCurrentCategory() {
         return currentCategory;
     }
 
-    public LiveData<List<ListItem>> getVisibleItems() {
-        return visibleItems;
+    public LiveData<List<ListItem>> observeItems(ListCategory category) {
+        return repository.observeItems(category);
     }
 
     public ListCategory getCurrentCategoryValue() {
@@ -62,8 +54,10 @@ public class MainViewModel extends AndroidViewModel {
         }
     }
 
-    public void swipeLeft(int position) {
-        ListCategory category = getCurrentCategoryValue();
+    public void swipeLeft(ListCategory category, int position) {
+        if (category == null) {
+            return;
+        }
 
         switch (category) {
             case INBOX:
@@ -80,8 +74,10 @@ public class MainViewModel extends AndroidViewModel {
         }
     }
 
-    public void swipeRight(int position) {
-        ListCategory category = getCurrentCategoryValue();
+    public void swipeRight(ListCategory category, int position) {
+        if (category == null) {
+            return;
+        }
 
         switch (category) {
             case INBOX:

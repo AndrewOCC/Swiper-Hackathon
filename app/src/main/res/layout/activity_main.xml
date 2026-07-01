@@ -33,15 +33,12 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view"
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/column_pager"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingStart="@dimen/list_horizontal_padding"
-            android:paddingEnd="@dimen/list_horizontal_padding"
-            android:paddingBottom="@dimen/list_bottom_padding"
-            android:scrollbars="vertical" />
+            android:overScrollMode="never" />
 
         <View
             android:id="@+id/bottom_edge_swipe_zone"

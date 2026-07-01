@@ -10,8 +10,8 @@ android {
         applicationId "com.listmanager"
         minSdk 24
         targetSdk 35
-        versionCode 1
-        versionName "1.0"
+        versionCode 4
+        versionName "1.4.0"
     }
 
     compileOptions {
@@ -35,6 +35,7 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel:2.8.7'
     implementation 'androidx.lifecycle:lifecycle-livedata:2.8.7'
     implementation 'androidx.activity:activity:1.9.3'
+    implementation 'androidx.viewpager2:viewpager2:1.1.0'
     implementation 'androidx.room:room-runtime:2.6.1'
     annotationProcessor 'androidx.room:room-compiler:2.6.1'
 }
