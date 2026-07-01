@@ -2,7 +2,15 @@
 
 A simple Android app for triaging items across three lists using swipe gestures.
 
-Swipe items in the **Inbox** to sort them into **Starred** (swipe left) or **Archived** (swipe right). Use the navigation drawer to switch lists, restore archived items, or move starred items back to the inbox.
+Swipe items in the **Inbox** to sort them into **High Priority** (swipe left) or **Low Priority** (swipe right). Use the top tabs or swipe on the tab bar / bottom edge to switch between lists.
+
+## Navigation
+
+Three top tabs (left to right): **Low Priority** | **Inbox** | **High Priority**
+
+- Tap a tab to switch lists
+- Swipe left/right on the tab bar or the faded bottom edge to move between lists
+- The active tab is bold and full opacity; inactive tabs are faded
 
 ## Architecture
 
@@ -22,9 +30,9 @@ Swipe items in the **Inbox** to sort them into **Starred** (swipe left) or **Arc
 
 | Current list | Swipe left | Swipe right |
 |--------------|------------|-------------|
-| Inbox | Move to Starred | Move to Archived |
-| Archived | Restore to Inbox | Delete permanently |
-| Starred | Move to Inbox | Move to Inbox |
+| Inbox | Move to High Priority | Move to Low Priority |
+| Low Priority | Restore to Inbox | Delete permanently |
+| High Priority | Move to Inbox | Move to Inbox |
 
 Pull to refresh (or use the toolbar action) to reset all lists to the default sample items.
 

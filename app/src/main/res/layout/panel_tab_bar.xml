@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/tab_bar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:baselineAligned="false"
+    android:orientation="horizontal"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:id="@+id/tab_low_priority"
+        style="@style/Widget.ListManager.Tab"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/category_low_priority"
+        tools:alpha="0.45" />
+
+    <TextView
+        android:id="@+id/tab_inbox"
+        style="@style/Widget.ListManager.Tab"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/category_inbox"
+        tools:alpha="1" />
+
+    <TextView
+        android:id="@+id/tab_high_priority"
+        style="@style/Widget.ListManager.Tab"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/category_high_priority"
+        tools:alpha="0.45" />
+
+</LinearLayout>

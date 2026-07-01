@@ -4,4 +4,5 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="list_horizontal_padding">16dp</dimen>
     <dimen name="list_bottom_padding">16dp</dimen>
+    <dimen name="bottom_edge_swipe_height">72dp</dimen>
 </resources>

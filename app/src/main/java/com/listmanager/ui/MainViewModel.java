@@ -43,6 +43,20 @@ public class MainViewModel extends AndroidViewModel {
         currentCategory.setValue(category);
     }
 
+    public void selectNextPanel() {
+        ListCategory category = currentCategory.getValue();
+        if (category != null) {
+            selectCategory(category.nextPanel());
+        }
+    }
+
+    public void selectPreviousPanel() {
+        ListCategory category = currentCategory.getValue();
+        if (category != null) {
+            selectCategory(category.previousPanel());
+        }
+    }
+
     public void swipeLeft(int position) {
         ListCategory category = currentCategory.getValue();
         if (category == null) {

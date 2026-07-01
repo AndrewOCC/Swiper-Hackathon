@@ -4,12 +4,9 @@
     <string name="action_refresh">Reset sample items</string>
     <string name="items_reset">Sample items restored</string>
 
+    <string name="category_low_priority">Low Priority</string>
     <string name="category_inbox">Inbox</string>
-    <string name="category_archived">Archived</string>
-    <string name="category_starred">Starred</string>
+    <string name="category_high_priority">High Priority</string>
 
-    <string name="drawer_open">Open navigation drawer</string>
-    <string name="drawer_close">Close navigation drawer</string>
-    <string name="drawer_title">Lists</string>
-    <string name="drawer_subtitle">Swipe items to organize your lists</string>
+    <string name="cd_panel_swipe_zone">Swipe left or right to change list</string>
 </resources>
