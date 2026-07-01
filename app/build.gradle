@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.freelancer.flapisample'
+    namespace 'com.listmanager'
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.freelancer.flapisample"
+        applicationId "com.listmanager"
         minSdk 24
         targetSdk 35
         versionCode 1
@@ -33,8 +33,7 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
-    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.8.7'
+    implementation 'androidx.lifecycle:lifecycle-livedata:2.8.7'
+    implementation 'androidx.activity:activity:1.9.3'
 }

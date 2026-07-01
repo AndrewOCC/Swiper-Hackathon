@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Swiper (no swiping!)</string>
-    <string name="color_primary"></string>
+    <string name="app_name">List Manager</string>
+    <string name="action_refresh">Reset sample items</string>
+    <string name="items_reset">Sample items restored</string>
 
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
-    <string name="action_refresh">Refresh</string>
+    <string name="category_inbox">Inbox</string>
+    <string name="category_archived">Archived</string>
+    <string name="category_starred">Starred</string>
 
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
+    <string name="drawer_title">Lists</string>
 </resources>

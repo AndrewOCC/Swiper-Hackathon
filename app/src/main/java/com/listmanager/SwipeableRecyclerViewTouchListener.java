@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.freelancer.flapisample;
+package com.listmanager;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
