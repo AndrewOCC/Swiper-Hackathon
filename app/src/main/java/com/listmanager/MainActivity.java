@@ -1,5 +1,6 @@
 package com.listmanager;
 
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.TypedValue;
@@ -7,7 +8,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -18,7 +18,6 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -27,7 +26,7 @@ import com.listmanager.model.ListCategory;
 import com.listmanager.ui.MainViewModel;
 import com.listmanager.ui.MainViewModelFactory;
 
-public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
+public class MainActivity extends AppCompatActivity {
 
     private static final float TAB_SELECTED_ALPHA = 1f;
     private static final float TAB_UNSELECTED_ALPHA = 0.4f;
@@ -37,12 +36,11 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     private MaterialToolbar toolbar;
     private AppBarLayout appBarLayout;
+    private View tabBar;
     private TextView tabLowPriority;
     private TextView tabInbox;
     private TextView tabHighPriority;
     private View bottomEdgeSwipeZone;
-
-    private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView recyclerView;
 
     private int selectedTabColor;
@@ -61,21 +59,24 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
         toolbar = findViewById(R.id.toolbar);
         appBarLayout = findViewById(R.id.app_bar);
+        tabBar = findViewById(R.id.tab_bar);
         tabLowPriority = findViewById(R.id.tab_low_priority);
         tabInbox = findViewById(R.id.tab_inbox);
         tabHighPriority = findViewById(R.id.tab_high_priority);
         bottomEdgeSwipeZone = findViewById(R.id.bottom_edge_swipe_zone);
         recyclerView = findViewById(R.id.recycler_view);
-        swipeRefreshLayout = findViewById(R.id.container);
 
         selectedTabColor = resolveThemeColor(com.google.android.material.R.attr.colorPrimary);
         unselectedTabColor = resolveThemeColor(com.google.android.material.R.attr.colorOnSurface);
 
         setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+
         setupEdgeToEdge();
         setupTabBar();
-        setupPanelSwipeZones();
-        setupSwipeRefreshColors();
+        setupPanelSwiping();
         setupRecyclerView();
         observeViewModel();
     }
@@ -121,8 +122,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         tabHighPriority.setOnClickListener(view -> viewModel.selectCategory(ListCategory.STARRED));
     }
 
-    private void setupPanelSwipeZones() {
-        PanelSwipeTouchListener.Callback callback = new PanelSwipeTouchListener.Callback() {
+    private void setupPanelSwiping() {
+        int swipeThreshold = getResources().getDimensionPixelSize(R.dimen.panel_swipe_threshold);
+        PanelSwipeHandler.Callback callback = new PanelSwipeHandler.Callback() {
             @Override
             public void onSwipeLeft() {
                 viewModel.selectNextPanel();
@@ -134,22 +136,13 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
         };
 
-        PanelSwipeTouchListener panelSwipeTouchListener =
-                new PanelSwipeTouchListener(this, callback);
+        PanelSwipeHandler panelSwipeHandler = new PanelSwipeHandler(this, callback, swipeThreshold);
+        View.OnTouchListener swipeListener = panelSwipeHandler.asTouchListener();
 
-        View.OnTouchListener swipeTouchListener = panelSwipeTouchListener::onTouch;
-        tabLowPriority.setOnTouchListener(swipeTouchListener);
-        tabInbox.setOnTouchListener(swipeTouchListener);
-        tabHighPriority.setOnTouchListener(swipeTouchListener);
-        bottomEdgeSwipeZone.setOnTouchListener(swipeTouchListener);
-    }
-
-    private void setupSwipeRefreshColors() {
-        swipeRefreshLayout.setOnRefreshListener(this);
-        swipeRefreshLayout.setColorSchemeColors(selectedTabColor);
-        swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
-                getColor(R.color.md_theme_surface_container_low)
-        );
+        appBarLayout.setOnTouchListener(swipeListener);
+        tabBar.setOnTouchListener(swipeListener);
+        bottomEdgeSwipeZone.setOnTouchListener(swipeListener);
+        recyclerView.addOnItemTouchListener(panelSwipeHandler.asRecyclerBlankAreaListener());
     }
 
     private void setupRecyclerView() {
@@ -157,7 +150,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
-        SwipeableRecyclerViewTouchListener swipeTouchListener =
+        SwipeableRecyclerViewTouchListener itemSwipeListener =
                 new SwipeableRecyclerViewTouchListener(recyclerView,
                         new SwipeableRecyclerViewTouchListener.SwipeListener() {
                             @Override
@@ -179,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                                 }
                             }
                         });
-        recyclerView.addOnItemTouchListener(swipeTouchListener);
+        recyclerView.addOnItemTouchListener(itemSwipeListener);
     }
 
     private void observeViewModel() {
@@ -211,17 +204,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.menu_refresh) {
-            onRefresh();
+        if (item.getItemId() == R.id.menu_settings) {
+            startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onRefresh() {
-        viewModel.refreshItems();
-        swipeRefreshLayout.setRefreshing(false);
-        Toast.makeText(this, R.string.items_reset, Toast.LENGTH_SHORT).show();
     }
 }

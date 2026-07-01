@@ -1,12 +1,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".MainActivity">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/menu_refresh"
-        android:orderInCategory="90"
-        android:title="@string/action_refresh"
-        app:showAsAction="ifRoom" />
+        android:id="@+id/menu_settings"
+        android:icon="@drawable/ic_settings"
+        android:title="@string/settings_title"
+        app:showAsAction="always" />
 
 </menu>

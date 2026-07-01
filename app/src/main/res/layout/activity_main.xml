@@ -20,33 +20,28 @@
             style="@style/Widget.ListManager.Toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="@string/app_name" />
+            app:contentInsetStartWithNavigation="0dp"
+            app:title="" />
 
         <include layout="@layout/panel_tab_bar" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
     <FrameLayout
+        android:id="@+id/content_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/container"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_view"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clipToPadding="false"
-                android:paddingStart="@dimen/list_horizontal_padding"
-                android:paddingEnd="@dimen/list_horizontal_padding"
-                android:paddingBottom="@dimen/list_bottom_padding"
-                android:scrollbars="vertical" />
-
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/list_horizontal_padding"
+            android:paddingEnd="@dimen/list_horizontal_padding"
+            android:paddingBottom="@dimen/list_bottom_padding"
+            android:scrollbars="vertical" />
 
         <View
             android:id="@+id/bottom_edge_swipe_zone"
@@ -54,7 +49,10 @@
             android:layout_height="@dimen/bottom_edge_swipe_height"
             android:layout_gravity="bottom"
             android:background="@drawable/bottom_edge_fade"
-            android:contentDescription="@string/cd_panel_swipe_zone" />
+            android:clickable="true"
+            android:contentDescription="@string/cd_panel_swipe_zone"
+            android:elevation="4dp"
+            android:focusable="true" />
 
     </FrameLayout>
 

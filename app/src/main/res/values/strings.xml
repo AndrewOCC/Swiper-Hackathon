@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">List Manager</string>
-    <string name="action_refresh">Reset sample items</string>
+    <string name="settings_title">Settings</string>
+    <string name="action_reset_sample_items">Reset sample items</string>
     <string name="items_reset">Sample items restored</string>
 
     <string name="category_low_priority">Low Priority</string>
