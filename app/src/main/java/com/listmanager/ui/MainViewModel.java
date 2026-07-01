@@ -1,8 +1,12 @@
 package com.listmanager.ui;
 
+import android.app.Application;
+
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.Transformations;
 
 import com.listmanager.data.ItemRepository;
 import com.listmanager.model.ListCategory;
@@ -10,15 +14,21 @@ import com.listmanager.model.ListItem;
 
 import java.util.List;
 
-public class MainViewModel extends ViewModel {
+public class MainViewModel extends AndroidViewModel {
 
     private final ItemRepository repository;
     private final MutableLiveData<ListCategory> currentCategory = new MutableLiveData<>(ListCategory.INBOX);
-    private final MutableLiveData<List<ListItem>> visibleItems = new MutableLiveData<>();
+    private final LiveData<List<ListItem>> visibleItems;
 
-    public MainViewModel() {
-        repository = new ItemRepository();
-        publishCurrentList();
+    public MainViewModel(@NonNull Application application) {
+        super(application);
+        repository = new ItemRepository(application);
+        visibleItems = Transformations.switchMap(
+                currentCategory,
+                category -> repository.observeItems(
+                        category != null ? category : ListCategory.INBOX
+                )
+        );
     }
 
     public LiveData<ListCategory> getCurrentCategory() {
@@ -31,7 +41,6 @@ public class MainViewModel extends ViewModel {
 
     public void selectCategory(ListCategory category) {
         currentCategory.setValue(category);
-        publishCurrentList();
     }
 
     public void swipeLeft(int position) {
@@ -53,8 +62,6 @@ public class MainViewModel extends ViewModel {
             default:
                 break;
         }
-
-        publishCurrentList();
     }
 
     public void swipeRight(int position) {
@@ -76,21 +83,10 @@ public class MainViewModel extends ViewModel {
             default:
                 break;
         }
-
-        publishCurrentList();
     }
 
     public void refreshItems() {
         repository.resetSampleItems();
         currentCategory.setValue(ListCategory.INBOX);
-        publishCurrentList();
-    }
-
-    private void publishCurrentList() {
-        ListCategory category = currentCategory.getValue();
-        if (category == null) {
-            category = ListCategory.INBOX;
-        }
-        visibleItems.setValue(repository.getItems(category));
     }
 }

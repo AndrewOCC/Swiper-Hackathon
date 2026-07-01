@@ -1,59 +1,86 @@
 package com.listmanager.data;
 
+import android.app.Application;
+
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Transformations;
+
+import com.listmanager.data.local.AppDatabase;
+import com.listmanager.data.local.ListItemDao;
+import com.listmanager.data.local.ListItemEntity;
+import com.listmanager.data.local.SampleData;
 import com.listmanager.model.ListCategory;
 import com.listmanager.model.ListItem;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 public class ItemRepository {
 
-    private final Map<ListCategory, List<ListItem>> lists = new EnumMap<>(ListCategory.class);
+    private final ListItemDao dao;
+    private final ExecutorService executor;
 
-    public ItemRepository() {
-        for (ListCategory category : ListCategory.values()) {
-            lists.put(category, new ArrayList<>());
-        }
-        seedSampleItems();
+    public ItemRepository(Application application) {
+        AppDatabase database = AppDatabase.getInstance(application);
+        dao = database.listItemDao();
+        executor = AppDatabase.getWriteExecutor();
     }
 
-    public List<ListItem> getItems(ListCategory category) {
-        return new ArrayList<>(lists.get(category));
+    public LiveData<List<ListItem>> observeItems(ListCategory category) {
+        return Transformations.map(
+                dao.observeItems(category.name()),
+                this::mapEntities
+        );
     }
 
     public void moveItem(ListCategory from, int index, ListCategory to) {
-        List<ListItem> source = lists.get(from);
-        if (index < 0 || index >= source.size()) {
-            return;
-        }
+        executor.execute(() -> {
+            List<ListItemEntity> sourceItems = dao.getItemsSync(from.name());
+            if (index < 0 || index >= sourceItems.size()) {
+                return;
+            }
 
-        ListItem item = source.remove(index);
-        lists.get(to).add(0, item);
+            ListItemEntity entity = sourceItems.get(index);
+            entity.category = to.name();
+            entity.sortOrder = nextSortOrder(to);
+            dao.update(entity);
+        });
     }
 
     public void deleteItem(ListCategory from, int index) {
-        List<ListItem> source = lists.get(from);
-        if (index >= 0 && index < source.size()) {
-            source.remove(index);
-        }
+        executor.execute(() -> {
+            List<ListItemEntity> sourceItems = dao.getItemsSync(from.name());
+            if (index < 0 || index >= sourceItems.size()) {
+                return;
+            }
+            dao.deleteById(sourceItems.get(index).id);
+        });
     }
 
     public void resetSampleItems() {
-        for (ListCategory category : ListCategory.values()) {
-            lists.get(category).clear();
-        }
-        seedSampleItems();
+        executor.execute(() -> {
+            dao.deleteAll();
+            dao.insertAll(SampleData.createInboxItems());
+        });
     }
 
-    private void seedSampleItems() {
-        List<ListItem> inbox = lists.get(ListCategory.INBOX);
-        inbox.add(new ListItem("1", "Plan weekly meals", "Draft a menu and shopping list for the week."));
-        inbox.add(new ListItem("2", "Book dentist appointment", "Schedule a check-up before the end of the month."));
-        inbox.add(new ListItem("3", "Organize desk", "Sort papers, recycle old notes, and tidy cables."));
-        inbox.add(new ListItem("4", "Call Alex", "Follow up on the project timeline and next steps."));
-        inbox.add(new ListItem("5", "Read saved article", "Finish the long-form piece saved from last week."));
-        inbox.add(new ListItem("6", "Update budget", "Review subscriptions and adjust monthly categories."));
+    private long nextSortOrder(ListCategory category) {
+        Long minSortOrder = dao.getMinSortOrder(category.name());
+        if (minSortOrder == null) {
+            return System.currentTimeMillis();
+        }
+        return minSortOrder - 1;
+    }
+
+    private List<ListItem> mapEntities(List<ListItemEntity> entities) {
+        List<ListItem> items = new ArrayList<>();
+        if (entities == null) {
+            return items;
+        }
+        for (ListItemEntity entity : entities) {
+            items.add(new ListItem(entity.id, entity.title, entity.description));
+        }
+        return items;
     }
 }

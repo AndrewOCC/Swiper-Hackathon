@@ -7,8 +7,9 @@ Swipe items in the **Inbox** to sort them into **Starred** (swipe left) or **Arc
 ## Architecture
 
 - **MVVM** — `MainActivity` observes `MainViewModel` via LiveData
-- **Repository** — `ItemRepository` owns the three lists and move/delete logic
-- **Local-only** — no network; sample items are seeded in memory
+- **Repository** — `ItemRepository` coordinates list operations
+- **Room** — items and categories persist in a local SQLite database
+- **Material 3** — dynamic color (Material You), edge-to-edge layout, dark theme support
 
 ## Build configuration
 
@@ -26,3 +27,9 @@ Swipe items in the **Inbox** to sort them into **Starred** (swipe left) or **Arc
 | Starred | Move to Inbox | Move to Inbox |
 
 Pull to refresh (or use the toolbar action) to reset all lists to the default sample items.
+
+## UI notes
+
+- **Material You**: on Android 12+, the app picks up wallpaper-based dynamic colors automatically.
+- **Edge-to-edge**: content extends behind the status and navigation bars with proper inset padding.
+- **Day/night**: follows the system theme via `Theme.Material3.DynamicColors.DayNight`.

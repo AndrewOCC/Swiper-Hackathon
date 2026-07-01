@@ -1,49 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.ListManager.Card"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp">
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="8dp"
+    android:clickable="true"
+    android:focusable="true">
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/card_view"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginBottom="1dp"
-        android:clickable="true"
-        app:cardCornerRadius="4dp"
-        app:cardElevation="3dp"
-        app:cardUseCompatPadding="true">
+        android:orientation="vertical"
+        android:padding="20dp">
 
-        <RelativeLayout
+        <TextView
+            android:id="@+id/item_title"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnSurface" />
 
-            <TextView
-                android:id="@+id/item_title"
-                style="@style/TextAppearance.AppCompat.Medium"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:paddingLeft="18dp"
-                android:paddingTop="18dp"
-                android:paddingRight="18dp"
-                android:paddingBottom="10dp"
-                android:singleLine="true" />
+        <TextView
+            android:id="@+id/item_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
-            <TextView
-                android:id="@+id/item_description"
-                style="@style/TextAppearance.AppCompat.Small"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/item_title"
-                android:paddingLeft="24dp"
-                android:paddingRight="24dp"
-                android:paddingBottom="24dp" />
+    </LinearLayout>
 
-        </RelativeLayout>
-    </androidx.cardview.widget.CardView>
-</RelativeLayout>
+</com.google.android.material.card.MaterialCardView>
