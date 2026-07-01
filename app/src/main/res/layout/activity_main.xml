@@ -15,14 +15,6 @@
         android:background="?attr/colorSurface"
         app:elevation="0dp">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            style="@style/Widget.ListManager.Toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:contentInsetStartWithNavigation="0dp"
-            app:title="" />
-
         <include layout="@layout/panel_tab_bar" />
 
     </com.google.android.material.appbar.AppBarLayout>

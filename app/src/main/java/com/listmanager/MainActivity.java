@@ -3,14 +3,12 @@ package com.listmanager;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.TypedValue;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -22,7 +20,6 @@ import androidx.viewpager2.widget.MarginPageTransformer;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.appbar.AppBarLayout;
-import com.google.android.material.appbar.MaterialToolbar;
 import com.listmanager.adapter.ColumnPagerAdapter;
 import com.listmanager.model.ListCategory;
 import com.listmanager.ui.MainViewModel;
@@ -34,13 +31,13 @@ public class MainActivity extends AppCompatActivity {
     private MainViewModel viewModel;
     private ColumnPagerAdapter columnPagerAdapter;
 
-    private MaterialToolbar toolbar;
     private AppBarLayout appBarLayout;
     private View tabBarContainer;
     private TextView tabLowPriority;
     private TextView tabInbox;
     private TextView tabHighPriority;
     private View tabIndicator;
+    private ImageButton settingsButton;
     private View bottomEdgeSwipeZone;
     private ViewPager2 columnPager;
 
@@ -57,23 +54,18 @@ public class MainActivity extends AppCompatActivity {
                 new MainViewModelFactory(getApplication())
         ).get(MainViewModel.class);
 
-        toolbar = findViewById(R.id.toolbar);
         appBarLayout = findViewById(R.id.app_bar);
         tabBarContainer = findViewById(R.id.tab_bar_container);
         tabLowPriority = findViewById(R.id.tab_low_priority);
         tabInbox = findViewById(R.id.tab_inbox);
         tabHighPriority = findViewById(R.id.tab_high_priority);
         tabIndicator = findViewById(R.id.tab_indicator);
+        settingsButton = findViewById(R.id.settings_button);
         bottomEdgeSwipeZone = findViewById(R.id.bottom_edge_swipe_zone);
         columnPager = findViewById(R.id.column_pager);
 
         int selectedTabColor = resolveThemeColor(com.google.android.material.R.attr.colorPrimary);
         int unselectedTabColor = resolveThemeColor(com.google.android.material.R.attr.colorOnSurface);
-
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayShowTitleEnabled(false);
-        }
 
         tabBarAnimator = new TabBarAnimator(
                 tabLowPriority,
@@ -194,6 +186,8 @@ public class MainActivity extends AppCompatActivity {
         tabLowPriority.setOnClickListener(view -> scrollToPanel(0));
         tabInbox.setOnClickListener(view -> scrollToPanel(1));
         tabHighPriority.setOnClickListener(view -> scrollToPanel(2));
+        settingsButton.setOnClickListener(view ->
+                startActivity(new Intent(this, SettingsActivity.class)));
     }
 
     private void setupPanelSwiping() {
@@ -242,20 +236,5 @@ public class MainActivity extends AppCompatActivity {
                 columnPager.setCurrentItem(targetIndex, true);
             }
         });
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.menu_settings) {
-            startActivity(new Intent(this, SettingsActivity.class));
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 }

@@ -74,7 +74,7 @@ public class TabBarAnimator {
         android.view.ViewGroup.MarginLayoutParams params =
                 (android.view.ViewGroup.MarginLayoutParams) indicator.getLayoutParams();
         params.width = indicatorWidth;
-        params.leftMargin = tabs[0].getLeft() + tabs[0].getPaddingLeft();
+        params.leftMargin = tabLeftInIndicatorParent(tabs[0]) + tabs[0].getPaddingLeft();
         indicator.setLayoutParams(params);
     }
 
@@ -85,9 +85,24 @@ public class TabBarAnimator {
 
         android.view.ViewGroup.MarginLayoutParams params =
                 (android.view.ViewGroup.MarginLayoutParams) indicator.getLayoutParams();
-        int baseLeft = tabs[0].getLeft() + tabs[0].getPaddingLeft();
+        int baseLeft = tabLeftInIndicatorParent(tabs[0]) + tabs[0].getPaddingLeft();
         params.leftMargin = baseLeft + Math.round(scrollPosition * tabWidth);
         indicator.setLayoutParams(params);
+    }
+
+    private int tabLeftInIndicatorParent(@NonNull TextView tab) {
+        View indicatorParent = (View) indicator.getParent();
+        int left = 0;
+        View child = tab;
+        while (child != null && child != indicatorParent) {
+            left += child.getLeft();
+            if (child.getParent() instanceof View) {
+                child = (View) child.getParent();
+            } else {
+                break;
+            }
+        }
+        return left;
     }
 
     private void updateTabStyles(float scrollPosition) {
