@@ -9,4 +9,7 @@
     <color name="md_theme_surface">#111318</color>
     <color name="md_theme_on_surface">#E2E2E9</color>
     <color name="md_theme_surface_container_low">#1A1C22</color>
+    <color name="swipe_delete_background">#8C1D18</color>
+    <color name="swipe_move_background">#0041A8</color>
+    <color name="swipe_move_text">#DDE6FF</color>
 </resources>

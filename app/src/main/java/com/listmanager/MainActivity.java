@@ -127,12 +127,12 @@ public class MainActivity extends AppCompatActivity {
         PanelSwipeHandler.Callback callback = new PanelSwipeHandler.Callback() {
             @Override
             public void onSwipeLeft() {
-                viewModel.selectNextPanel();
+                viewModel.selectPreviousPanel();
             }
 
             @Override
             public void onSwipeRight() {
-                viewModel.selectPreviousPanel();
+                viewModel.selectNextPanel();
             }
         };
 
@@ -150,26 +150,19 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
-        SwipeableRecyclerViewTouchListener itemSwipeListener =
-                new SwipeableRecyclerViewTouchListener(recyclerView,
-                        new SwipeableRecyclerViewTouchListener.SwipeListener() {
+        ListItemSwipeTouchListener itemSwipeListener =
+                new ListItemSwipeTouchListener(
+                        recyclerView,
+                        viewModel::getCurrentCategoryValue,
+                        new ListItemSwipeTouchListener.Callback() {
                             @Override
-                            public boolean canSwipe(int position) {
-                                return true;
+                            public void onSwipeLeft(int position) {
+                                viewModel.swipeLeft(position);
                             }
 
                             @Override
-                            public void onDismissedBySwipeLeft(RecyclerView recyclerView, int[] reverseSortedPositions) {
-                                for (int position : reverseSortedPositions) {
-                                    viewModel.swipeLeft(position);
-                                }
-                            }
-
-                            @Override
-                            public void onDismissedBySwipeRight(RecyclerView recyclerView, int[] reverseSortedPositions) {
-                                for (int position : reverseSortedPositions) {
-                                    viewModel.swipeRight(position);
-                                }
+                            public void onSwipeRight(int position) {
+                                viewModel.swipeRight(position);
                             }
                         });
         recyclerView.addOnItemTouchListener(itemSwipeListener);

@@ -39,6 +39,11 @@ public class MainViewModel extends AndroidViewModel {
         return visibleItems;
     }
 
+    public ListCategory getCurrentCategoryValue() {
+        ListCategory category = currentCategory.getValue();
+        return category != null ? category : ListCategory.INBOX;
+    }
+
     public void selectCategory(ListCategory category) {
         currentCategory.setValue(category);
     }
@@ -58,31 +63,7 @@ public class MainViewModel extends AndroidViewModel {
     }
 
     public void swipeLeft(int position) {
-        ListCategory category = currentCategory.getValue();
-        if (category == null) {
-            return;
-        }
-
-        switch (category) {
-            case INBOX:
-                repository.moveItem(ListCategory.INBOX, position, ListCategory.STARRED);
-                break;
-            case ARCHIVED:
-                repository.moveItem(ListCategory.ARCHIVED, position, ListCategory.INBOX);
-                break;
-            case STARRED:
-                repository.moveItem(ListCategory.STARRED, position, ListCategory.INBOX);
-                break;
-            default:
-                break;
-        }
-    }
-
-    public void swipeRight(int position) {
-        ListCategory category = currentCategory.getValue();
-        if (category == null) {
-            return;
-        }
+        ListCategory category = getCurrentCategoryValue();
 
         switch (category) {
             case INBOX:
@@ -93,6 +74,23 @@ public class MainViewModel extends AndroidViewModel {
                 break;
             case STARRED:
                 repository.moveItem(ListCategory.STARRED, position, ListCategory.INBOX);
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void swipeRight(int position) {
+        ListCategory category = getCurrentCategoryValue();
+
+        switch (category) {
+            case INBOX:
+                repository.moveItem(ListCategory.INBOX, position, ListCategory.STARRED);
+                break;
+            case ARCHIVED:
+                repository.moveItem(ListCategory.ARCHIVED, position, ListCategory.INBOX);
+                break;
+            case STARRED:
                 break;
             default:
                 break;

@@ -10,4 +10,5 @@
     <string name="category_high_priority">High Priority</string>
 
     <string name="cd_panel_swipe_zone">Swipe left or right to change list</string>
+    <string name="action_delete">Delete</string>
 </resources>
