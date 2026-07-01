@@ -36,9 +36,34 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
 
     @Override
     public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
+        resetSwipeViewState(holder.itemView);
         ListItem item = items.get(position);
         holder.title.setText(item.getTitle());
         holder.description.setText(item.getDescription());
+    }
+
+    static void resetSwipeViewState(@NonNull View itemView) {
+        View foreground = itemView.findViewById(R.id.swipe_foreground);
+        if (foreground != null) {
+            foreground.animate().cancel();
+            foreground.setTranslationX(0f);
+            foreground.setAlpha(1f);
+        }
+
+        ViewGroup.LayoutParams params = itemView.getLayoutParams();
+        if (params != null) {
+            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            itemView.setLayoutParams(params);
+        }
+
+        View backgroundLeft = itemView.findViewById(R.id.swipe_background_left);
+        if (backgroundLeft != null) {
+            backgroundLeft.setVisibility(View.GONE);
+        }
+        View backgroundRight = itemView.findViewById(R.id.swipe_background_right);
+        if (backgroundRight != null) {
+            backgroundRight.setVisibility(View.GONE);
+        }
     }
 
     @Override

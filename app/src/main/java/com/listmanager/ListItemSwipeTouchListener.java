@@ -2,7 +2,6 @@ package com.listmanager;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.SystemClock;
@@ -70,7 +69,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
     private VelocityTracker velocityTracker;
 
     private final List<PendingDismissData> pendingDismisses = new ArrayList<>();
-    private int dismissAnimationRefCount = 0;
+    private int activeDismissAnimations = 0;
 
     public ListItemSwipeTouchListener(@NonNull RecyclerView recyclerView,
                                       @NonNull Supplier<ListCategory> categorySupplier,
@@ -292,7 +291,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         final boolean swipeRight = dismissToRight;
 
         animatingPosition = position;
-        dismissAnimationRefCount++;
+        activeDismissAnimations++;
 
         float targetTranslation = dismissToRight ? viewWidth : -viewWidth;
         foreground.animate().cancel();
@@ -303,7 +302,11 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                 .setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
-                        performDismiss(itemView, position, swipeRight);
+                        pendingDismisses.add(new PendingDismissData(position, itemView, swipeRight));
+                        activeDismissAnimations--;
+                        if (activeDismissAnimations == 0) {
+                            finishPendingDismisses();
+                        }
                     }
                 })
                 .start();
@@ -331,50 +334,40 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         }
     }
 
-    private void performDismiss(final View dismissView, final int dismissPosition, final boolean swipeRight) {
-        final ViewGroup.LayoutParams layoutParams = dismissView.getLayoutParams();
-        final int originalHeight = dismissView.getHeight();
-        final int originalLayoutHeight = layoutParams.height;
-
-        ValueAnimator animator = ValueAnimator.ofInt(originalHeight, 1).setDuration(animationTime);
-        animator.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                dismissAnimationRefCount--;
-                if (dismissAnimationRefCount == 0) {
-                    Collections.sort(pendingDismisses);
-                    for (PendingDismissData pendingDismiss : pendingDismisses) {
-                        if (pendingDismiss.swipeRight) {
-                            callback.onSwipeRight(pendingDismiss.position);
-                        } else {
-                            callback.onSwipeLeft(pendingDismiss.position);
-                        }
-
-                        pendingDismiss.view.setAlpha(alpha);
-                        pendingDismiss.view.setTranslationX(0);
-                        ViewGroup.LayoutParams params = pendingDismiss.view.getLayoutParams();
-                        params.height = originalLayoutHeight;
-                        pendingDismiss.view.setLayoutParams(params);
-                        hideBackgroundsOnView(pendingDismiss.view);
-                    }
-
-                    long time = SystemClock.uptimeMillis();
-                    MotionEvent cancelEvent = MotionEvent.obtain(
-                            time, time, MotionEvent.ACTION_CANCEL, 0, 0, 0);
-                    recyclerView.dispatchTouchEvent(cancelEvent);
-
-                    pendingDismisses.clear();
-                    animatingPosition = ListView.INVALID_POSITION;
-                }
+    private void finishPendingDismisses() {
+        Collections.sort(pendingDismisses);
+        for (PendingDismissData pendingDismiss : pendingDismisses) {
+            restoreDismissView(pendingDismiss.view);
+            if (pendingDismiss.swipeRight) {
+                callback.onSwipeRight(pendingDismiss.position);
+            } else {
+                callback.onSwipeLeft(pendingDismiss.position);
             }
-        });
-        animator.addUpdateListener(valueAnimator -> {
-            layoutParams.height = (Integer) valueAnimator.getAnimatedValue();
-            dismissView.setLayoutParams(layoutParams);
-        });
+        }
 
-        pendingDismisses.add(new PendingDismissData(dismissPosition, dismissView, swipeRight));
-        animator.start();
+        long time = SystemClock.uptimeMillis();
+        MotionEvent cancelEvent = MotionEvent.obtain(
+                time, time, MotionEvent.ACTION_CANCEL, 0, 0, 0);
+        recyclerView.dispatchTouchEvent(cancelEvent);
+
+        pendingDismisses.clear();
+        animatingPosition = ListView.INVALID_POSITION;
+    }
+
+    private void restoreDismissView(View itemView) {
+        View foreground = itemView.findViewById(R.id.swipe_foreground);
+        if (foreground != null) {
+            foreground.animate().cancel();
+            foreground.setTranslationX(0f);
+            foreground.setAlpha(1f);
+        }
+
+        ViewGroup.LayoutParams params = itemView.getLayoutParams();
+        if (params != null) {
+            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            itemView.setLayoutParams(params);
+        }
+        hideBackgroundsOnView(itemView);
     }
 
     private void hideBackgroundsOnView(View itemView) {
