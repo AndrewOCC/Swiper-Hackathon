@@ -1,0 +1,38 @@
+Title,Description,Status,Priority,Labels
+Modernize Android build toolchain,"Gradle 8.13, AGP 8.13.2, compileSdk/targetSdk 35, minSdk 24, Java 17, AndroidX.",Done,1,"architecture,release"
+Remove Freelancer API integration,Strip Retrofit/auth and convert to generic local List Manager.,Done,2,architecture
+MVVM + Repository architecture,"MainViewModel, ItemRepository, LiveData, ViewModelFactory.",Done,2,architecture
+Room persistence,SQLite via Room; items survive app restarts.,Done,2,"data,architecture"
+Material 3 UI with edge-to-edge and Material You,Dynamic colors; transparent system bars; day/night theme.,Done,2,ui
+Top tab navigation (three columns),Low Priority | Inbox | High Priority tabs with active state styling.,Done,2,ui
+Settings page for sample data,Settings icon opens reset sample items action.,Done,3,ui
+Panel swipe navigation,Swipe tabs/blank areas/bottom edge to switch columns.,Done,2,ui
+Email-style item swipe previews,Slide card to reveal target column label underneath.,Done,2,ui
+Delete affordance from Low Priority,Red background + bin icon + fade on swipe-left delete.,Done,2,ui
+Correct spatial swipe directions,Left swipe goes left column; right swipe goes right column.,Done,2,ui
+GitHub APK releases,Publish debug APKs to GitHub Releases.,Done,3,release
+Add new items (FAB + dialog),Create items with title and description; save to Inbox.,Backlog,2,"ui,data"
+Edit existing items,Tap or long-press to edit item fields.,Backlog,2,"ui,data"
+Undo last swipe action,Snackbar undo for move and delete actions.,Backlog,2,"ui,data"
+Empty state per column,UI when a column has zero items.,Backlog,3,ui
+Haptic feedback on swipe complete,Haptic on move/delete completion.,Backlog,4,"polish,ui"
+Search and filter items,Search within or across columns.,Backlog,3,"ui,data"
+Drag to reorder within column,Manual sort order persisted in Room.,Backlog,3,"ui,data"
+Export / import lists,JSON backup and restore.,Backlog,4,data
+Kotlin migration,Convert Java codebase to Kotlin.,Backlog,3,architecture
+Jetpack Compose UI rewrite,Replace XML with Compose Material 3.,Backlog,3,"ui,architecture"
+Hilt dependency injection,Inject repository and ViewModels.,Backlog,3,architecture
+Paging 3 for large lists,Room PagingSource for scalability.,Backlog,4,"data,architecture"
+Unit tests (ViewModel + Repository),Cover swipe and move logic.,Backlog,2,quality
+UI tests (Espresso / Compose),End-to-end tab and swipe flows.,Backlog,3,quality
+GitHub Actions CI,assembleDebug + test on PRs.,Backlog,2,"quality,release"
+Gradle version catalog,libs.versions.toml for dependencies.,Backlog,4,"architecture,release"
+Signed release build,Release keystore and R8 minification.,Backlog,2,release
+Play Store readiness,"Privacy policy, listing, screenshots.",Backlog,3,release
+Predictive back gesture support,Android 14+ back preview.,Backlog,4,"ui,polish"
+Accessibility audit,TalkBack and contrast improvements.,Backlog,3,"polish,ui"
+Fix README swipe direction table,Align docs with v1.3.0 behavior.,Backlog,4,polish
+Per-app language support,Android 13+ locale preferences.,Backlog,4,"ui,polish"
+Home screen widget,Inbox count widget.,Backlog,4,ui
+Notifications / reminders,Remind about stale inbox items.,Backlog,4,data
+Multi-device sync,Cloud sync if scope expands.,Backlog,4,"data,architecture"

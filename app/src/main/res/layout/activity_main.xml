@@ -1,57 +1,85 @@
-<android.support.v4.widget.SwipeRefreshLayout
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/container"
+    android:id="@+id/content_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.freelancer.flapisample.MainActivity"
-    >
+    tools:context="com.listmanager.MainActivity">
 
-<android.support.v4.widget.DrawerLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/drawer_layout"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    >
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
+        app:elevation="0dp">
 
-    <!-- The first child in the layout is for the main Activity UI-->
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                    xmlns:tools="http://schemas.android.com/tools"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    tools:context=".CardViewActivity"
-        >
+        <include layout="@layout/panel_tab_bar" />
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/recycler_view"
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <FrameLayout
+        android:id="@+id/content_frame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/column_pager"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingLeft="@dimen/activity_horizontal_margin"
-            android:paddingRight="@dimen/activity_horizontal_margin"
-            android:scrollbars="vertical"
-            />
+            android:clipChildren="false"
+            android:overScrollMode="never" />
 
-        <ProgressBar
-            android:id="@+id/progress_bar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:indeterminateOnly="true"
-            android:indeterminate="true"/>
+        <View
+            android:id="@+id/bottom_edge_swipe_zone"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/bottom_edge_swipe_height"
+            android:layout_gravity="bottom"
+            android:background="@drawable/bottom_edge_fade"
+            android:clickable="true"
+            android:contentDescription="@string/cd_panel_swipe_zone"
+            android:elevation="4dp"
+            android:focusable="true" />
 
+        <ImageButton
+            android:id="@+id/fab_add_item"
+            android:layout_width="@dimen/fab_size"
+            android:layout_height="@dimen/fab_size"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="@dimen/fab_margin"
+            android:background="@drawable/fab_background"
+            android:contentDescription="@string/cd_add_item"
+            android:elevation="6dp"
+            android:padding="16dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_add"
+            app:tint="?attr/colorOnPrimaryContainer" />
 
-    </RelativeLayout>
+    </FrameLayout>
 
-    <!-- Side navigation drawer UI -->
-    <ListView
-        android:id="@+id/navList"
-        android:layout_width="200dp"
-        android:layout_height="match_parent"
-        android:layout_gravity="left|start"
-        android:background="#ffeeeeee"/>
+    <TextView
+        android:id="@+id/debug_version_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="@dimen/fab_margin"
+        android:background="@drawable/debug_version_background"
+        android:clickable="false"
+        android:elevation="10dp"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:paddingStart="8dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="4dp"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="@android:color/white"
+        android:visibility="gone"
+        tools:text="v1.5.5"
+        tools:visibility="visible" />
 
-</android.support.v4.widget.DrawerLayout>
-
-</android.support.v4.widget.SwipeRefreshLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

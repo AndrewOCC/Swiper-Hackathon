@@ -1,28 +1,44 @@
-# Freelancer API Hackathon Android Application
-Base code was provided by Freelancer for their API Hackathon. Original project was broken and required some additional work.
+# List Manager
 
-The original application fetched a list of recommended Freelancer projects for your account. The new application allows you to swipe these projects _left_ or _right_ into one of two 'piles'; 'interested' or 'not interested'. Projects can be demoted or promoted from these piles. 
+A simple Android app for triaging items across three lists using swipe gestures.
 
-The goal was to allow a user to gradually filter down a list of projects they are interested in with minimal friction, and without concern of losing track of projects- if they swipe away a project, they can still browse through the 'not interested' list and reconsider them before clearing the list and deleting them.
+Swipe items in the **Inbox** to sort them into **Low Priority** (swipe left) or **High Priority** (swipe right). Swipe between columns to see adjacent lists side by side — the tab indicator and labels animate smoothly as you move.
 
-# Original Documentation- Android Sample App
-A simple Android application that demonstrates how to use the Freelancer API.
+## Navigation
 
-At a high level, this application downloads and displays the recommended
-projects of a particular user.
+Three top tabs (left to right): **Low Priority** | **Inbox** | **High Priority**
 
-> Don't forget to add a valid freelancer username and password in MainActivity
+- Tap a tab to switch lists
+- Swipe left/right on a column, the tab bar, or the faded bottom edge to move between lists
+- Adjacent columns peek in from the sides while swiping so all three feel side by side
+- The active tab is bold with a sliding underline; inactive tabs fade as you scroll
 
-## Libraries used in this sample include:
-- [Retrofit](http://square.github.io/retrofit/) for asynchronous HTTP
-- [Butterknife](http://jakewharton.github.io/butterknife/) for view injection
-- [GSON](https://github.com/google/gson) for JSON serialization
+## Architecture
 
-## This project uses the following versions of the build tools:
-- Gradle - 1.2.3
-- Build Tools - 23.0.0
-- Min SDK Version - 14
-- Target SDK Version - 23
+- **MVVM** — `MainActivity` observes `MainViewModel` via LiveData
+- **Repository** — `ItemRepository` coordinates list operations
+- **Room** — items and categories persist in a local SQLite database
+- **Material 3** — dynamic color (Material You), edge-to-edge layout, dark theme support
 
-You are free to change any of them to fit your development environment, but we
-cannot guarantee that the app will build smoothly if you do.
+## Build configuration
+
+- Gradle 8.13 / Android Gradle Plugin 8.13.2
+- compileSdk / targetSdk 35
+- minSdk 24
+- Java 17
+
+## Swipe behavior
+
+| Current list | Swipe left | Swipe right |
+|--------------|------------|-------------|
+| Inbox | Move to Low Priority | Move to High Priority |
+| Low Priority | Delete permanently | Restore to Inbox |
+| High Priority | Move to Inbox | (no action) |
+
+Pull to refresh (or use the toolbar action) to reset all lists to the default sample items.
+
+## UI notes
+
+- **Material You**: on Android 12+, the app picks up wallpaper-based dynamic colors automatically.
+- **Edge-to-edge**: content extends behind the status and navigation bars with proper inset padding.
+- **Day/night**: follows the system theme via `Theme.Material3.DynamicColors.DayNight`.

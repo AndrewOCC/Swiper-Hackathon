@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
-
-    <dimen name="floating_button_size">40dp</dimen>
-
-    <dimen name="button_elevation">2dp</dimen>
-    <dimen name="button_press_elevation">4dp</dimen>
-
-    <dimen name="card_elevation">4dp</dimen>
-    <dimen name="card_corner_radius">6dp</dimen>
+    <dimen name="list_horizontal_padding">16dp</dimen>
+    <dimen name="list_bottom_padding">16dp</dimen>
+    <dimen name="bottom_edge_swipe_height">96dp</dimen>
+    <dimen name="panel_swipe_threshold">56dp</dimen>
+    <dimen name="column_page_peek">36dp</dimen>
+    <dimen name="column_page_gap">8dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
+    <dimen name="fab_size">56dp</dimen>
 </resources>
