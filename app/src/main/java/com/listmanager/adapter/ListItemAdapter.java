@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -15,7 +17,6 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.listmanager.ListItemSwipeController;
 import com.listmanager.R;
 import com.listmanager.model.ListItem;
 
@@ -24,29 +25,31 @@ import java.util.List;
 
 public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemViewHolder> {
 
-    public interface EditCallback {
+    public interface SaveCallback {
         void onSaveItem(@NonNull String id, @NonNull String title, @NonNull String description);
     }
 
-    public interface ItemClickListener {
-        void onItemClick(int position);
+    public interface ItemActionListener {
+        void onEditItem(int position);
+        void onDeleteItem(@NonNull String itemId);
     }
 
     private final List<ListItem> items = new ArrayList<>();
-    private EditCallback editCallback;
     @Nullable
-    private ItemClickListener itemClickListener;
+    private SaveCallback saveCallback;
+    @Nullable
+    private ItemActionListener actionListener;
     @Nullable
     private String editingItemId;
     @Nullable
     private String pendingFocusItemId;
 
-    public void setEditCallback(@Nullable EditCallback editCallback) {
-        this.editCallback = editCallback;
+    public void setSaveCallback(@Nullable SaveCallback saveCallback) {
+        this.saveCallback = saveCallback;
     }
 
-    public void setItemClickListener(@Nullable ItemClickListener itemClickListener) {
-        this.itemClickListener = itemClickListener;
+    public void setActionListener(@Nullable ItemActionListener actionListener) {
+        this.actionListener = actionListener;
     }
 
     public void setEditingItemId(@Nullable String editingItemId) {
@@ -64,7 +67,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         }
         ItemViewHolder holder = (ItemViewHolder) recyclerView.findViewHolderForAdapterPosition(position);
         if (holder != null) {
-            holder.saveAndClose(editCallback);
+            holder.saveAndClose(saveCallback);
         }
     }
 
@@ -124,17 +127,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         resetSwipeViewState(holder.itemView);
         ListItem item = items.get(position);
         boolean editing = item.getId().equals(editingItemId);
-        holder.bind(item, editing, editCallback);
-        if (!editing && itemClickListener != null) {
-            holder.itemView.findViewById(R.id.swipe_foreground).setOnClickListener(view -> {
-                int adapterPosition = holder.getBindingAdapterPosition();
-                if (adapterPosition != RecyclerView.NO_POSITION) {
-                    itemClickListener.onItemClick(adapterPosition);
-                }
-            });
-        } else {
-            holder.itemView.findViewById(R.id.swipe_foreground).setOnClickListener(null);
-        }
+        holder.bind(item, editing, saveCallback, actionListener);
         if (editing && item.getId().equals(pendingFocusItemId)) {
             holder.focusTitle();
             pendingFocusItemId = null;
@@ -195,6 +188,11 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         private final TextView description;
         private final EditText titleEdit;
         private final EditText descriptionEdit;
+        private final LinearLayout actionsView;
+        private final LinearLayout actionsEdit;
+        private final ImageButton btnEdit;
+        private final ImageButton btnDelete;
+        private final View btnSave;
         private ListItem boundItem;
         private boolean saved;
 
@@ -204,11 +202,17 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
             description = itemView.findViewById(R.id.item_description);
             titleEdit = itemView.findViewById(R.id.item_title_edit);
             descriptionEdit = itemView.findViewById(R.id.item_description_edit);
+            actionsView = itemView.findViewById(R.id.card_actions_view);
+            actionsEdit = itemView.findViewById(R.id.card_actions_edit);
+            btnEdit = itemView.findViewById(R.id.btn_edit_item);
+            btnDelete = itemView.findViewById(R.id.btn_delete_item);
+            btnSave = itemView.findViewById(R.id.btn_save_item);
         }
 
         void bind(@NonNull ListItem item,
                   boolean editing,
-                  @Nullable EditCallback editCallback) {
+                  @Nullable SaveCallback saveCallback,
+                  @Nullable ItemActionListener actionListener) {
             boundItem = item;
             saved = false;
 
@@ -217,11 +221,13 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
                 description.setVisibility(View.GONE);
                 titleEdit.setVisibility(View.VISIBLE);
                 descriptionEdit.setVisibility(View.VISIBLE);
+                actionsView.setVisibility(View.GONE);
+                actionsEdit.setVisibility(View.VISIBLE);
 
                 titleEdit.setText(item.getTitle());
                 descriptionEdit.setText(item.getDescription());
 
-                titleEdit.setOnEditorActionListener((textView, actionId, event) -> {
+                titleEdit.setOnEditorActionListener((v, actionId, event) -> {
                     if (actionId == EditorInfo.IME_ACTION_NEXT) {
                         descriptionEdit.requestFocus();
                         return true;
@@ -229,21 +235,25 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
                     return false;
                 });
 
-                descriptionEdit.setOnEditorActionListener((textView, actionId, event) -> {
+                descriptionEdit.setOnEditorActionListener((v, actionId, event) -> {
                     if (actionId == EditorInfo.IME_ACTION_DONE) {
-                        saveAndClose(editCallback);
+                        saveAndClose(saveCallback);
                         return true;
                     }
                     return false;
                 });
 
-                View.OnFocusChangeListener focusListener = (view, hasFocus) -> {
+                View.OnFocusChangeListener focusListener = (v, hasFocus) -> {
                     if (!hasFocus && !titleEdit.hasFocus() && !descriptionEdit.hasFocus()) {
-                        saveAndClose(editCallback);
+                        saveAndClose(saveCallback);
                     }
                 };
                 titleEdit.setOnFocusChangeListener(focusListener);
                 descriptionEdit.setOnFocusChangeListener(focusListener);
+
+                btnSave.setOnClickListener(v -> saveAndClose(saveCallback));
+
+                itemView.setOnClickListener(null);
             } else {
                 titleEdit.setOnFocusChangeListener(null);
                 descriptionEdit.setOnFocusChangeListener(null);
@@ -251,10 +261,32 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
                 descriptionEdit.setVisibility(View.GONE);
                 title.setVisibility(View.VISIBLE);
                 description.setVisibility(View.VISIBLE);
+                actionsView.setVisibility(View.VISIBLE);
+                actionsEdit.setVisibility(View.GONE);
 
                 title.setText(item.getTitle());
                 description.setText(item.getDescription());
                 description.setVisibility(TextUtils.isEmpty(item.getDescription()) ? View.GONE : View.VISIBLE);
+
+                btnEdit.setOnClickListener(v -> {
+                    int pos = getBindingAdapterPosition();
+                    if (pos != RecyclerView.NO_POSITION && actionListener != null) {
+                        actionListener.onEditItem(pos);
+                    }
+                });
+
+                btnDelete.setOnClickListener(v -> {
+                    if (boundItem != null && actionListener != null) {
+                        actionListener.onDeleteItem(boundItem.getId());
+                    }
+                });
+
+                itemView.setOnClickListener(v -> {
+                    int pos = getBindingAdapterPosition();
+                    if (pos != RecyclerView.NO_POSITION && actionListener != null) {
+                        actionListener.onEditItem(pos);
+                    }
+                });
             }
         }
 
@@ -268,13 +300,13 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
             }
         }
 
-        void saveAndClose(@Nullable EditCallback editCallback) {
-            if (saved || boundItem == null || editCallback == null) {
+        void saveAndClose(@Nullable SaveCallback saveCallback) {
+            if (saved || boundItem == null || saveCallback == null) {
                 return;
             }
             saved = true;
             hideKeyboard();
-            editCallback.onSaveItem(
+            saveCallback.onSaveItem(
                     boundItem.getId(),
                     titleEdit.getText().toString(),
                     descriptionEdit.getText().toString()

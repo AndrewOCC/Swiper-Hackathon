@@ -112,11 +112,15 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
                 this,
                 viewModel,
                 listHorizontalPadding,
-                listBottomPadding + bottomEdgeHeight
+                listBottomPadding + bottomEdgeHeight,
+                panelDragListener.asRecyclerBlankAreaListener()
         );
         columnPager.setAdapter(columnPagerAdapter);
         columnPager.setOffscreenPageLimit(2);
-        columnPager.setUserInputEnabled(true);
+        // Disable ViewPager2 built-in touch input so it cannot steal card swipes.
+        // Panel navigation is driven entirely by PanelDragListener (tab bar, bottom
+        // edge, and blank areas within each column RecyclerView).
+        columnPager.setUserInputEnabled(false);
         columnPager.setCurrentItem(ListCategory.INBOX.getPanelIndex(), false);
 
         columnPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {

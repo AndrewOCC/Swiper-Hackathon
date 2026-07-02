@@ -15,4 +15,8 @@
     <string name="hint_item_description">Description</string>
     <string name="action_delete">Delete</string>
     <string name="debug_version_format">v%1$s</string>
+    <string name="cd_edit_item">Edit item</string>
+    <string name="cd_delete_item">Delete item</string>
+    <string name="cd_save_item">Save item</string>
+    <string name="action_save">Save</string>
 </resources>

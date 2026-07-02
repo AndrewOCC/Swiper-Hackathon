@@ -29,6 +29,7 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
 
     private final LifecycleOwner lifecycleOwner;
     private final MainViewModel viewModel;
+    private final RecyclerView.OnItemTouchListener panelBlankAreaListener;
     private int horizontalPadding;
     private int bottomPadding;
     private int extraHorizontalInset;
@@ -41,11 +42,13 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
     public ColumnPagerAdapter(@NonNull LifecycleOwner lifecycleOwner,
                               @NonNull MainViewModel viewModel,
                               int horizontalPadding,
-                              int bottomPadding) {
+                              int bottomPadding,
+                              @NonNull RecyclerView.OnItemTouchListener panelBlankAreaListener) {
         this.lifecycleOwner = lifecycleOwner;
         this.viewModel = viewModel;
         this.horizontalPadding = horizontalPadding;
         this.bottomPadding = bottomPadding;
+        this.panelBlankAreaListener = panelBlankAreaListener;
 
         editingItemObserver = editingItemId -> {
             for (ColumnPageViewHolder holder : pageHolders) {
@@ -119,7 +122,7 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             super(itemView);
             recyclerView = itemView.findViewById(R.id.column_recycler_view);
             listAdapter = new ListItemAdapter();
-            listAdapter.setEditCallback((id, title, description) ->
+            listAdapter.setSaveCallback((id, title, description) ->
                     viewModel.saveItem(id, title, description));
             recyclerView.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
             recyclerView.setAdapter(listAdapter);
@@ -142,11 +145,6 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             boundCategory = category;
             applyRecyclerPadding();
 
-            View pageParent = (View) itemView.getParent();
-            if (pageParent instanceof ViewGroup) {
-                ((ViewGroup) pageParent).setClipChildren(false);
-            }
-
             swipeController = new ListItemSwipeController(
                     recyclerView,
                     () -> boundCategory,
@@ -165,14 +163,26 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
                     }
             );
             swipeController.attach();
-            listAdapter.setItemClickListener(position -> {
-                String itemId = listAdapter.getItemIdAt(position);
-                if (itemId == null || itemId.equals(viewModel.getEditingItemIdValue())) {
-                    return;
+
+            listAdapter.setActionListener(new ListItemAdapter.ItemActionListener() {
+                @Override
+                public void onEditItem(int position) {
+                    String itemId = listAdapter.getItemIdAt(position);
+                    if (itemId == null || itemId.equals(viewModel.getEditingItemIdValue())) {
+                        return;
+                    }
+                    listAdapter.finishEditing(recyclerView);
+                    viewModel.startEditingItem(itemId);
                 }
-                listAdapter.finishEditing(recyclerView);
-                viewModel.startEditingItem(itemId);
+
+                @Override
+                public void onDeleteItem(@NonNull String itemId) {
+                    listAdapter.finishEditing(recyclerView);
+                    viewModel.deleteItem(itemId);
+                }
             });
+
+            recyclerView.addOnItemTouchListener(panelBlankAreaListener);
 
             itemsObserver = items -> {
                 listAdapter.setEditingItemId(viewModel.getEditingItemIdValue());
@@ -225,7 +235,8 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             if (swipeController != null) {
                 swipeController.detach();
             }
-            listAdapter.setItemClickListener(null);
+            recyclerView.removeOnItemTouchListener(panelBlankAreaListener);
+            listAdapter.setActionListener(null);
             swipeController = null;
             itemsObserver = null;
             boundCategory = null;

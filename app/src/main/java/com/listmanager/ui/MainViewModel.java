@@ -135,4 +135,14 @@ public class MainViewModel extends AndroidViewModel {
     public void clearEditingItem() {
         editingItemId.setValue(null);
     }
+
+    public void deleteItem(String id) {
+        if (id == null) {
+            return;
+        }
+        if (id.equals(editingItemId.getValue())) {
+            editingItemId.setValue(null);
+        }
+        repository.deleteItemById(id);
+    }
 }
