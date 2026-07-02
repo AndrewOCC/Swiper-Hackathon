@@ -136,6 +136,11 @@ public class MainViewModel extends AndroidViewModel {
         editingItemId.setValue(null);
     }
 
+    public void receiveSharedText(@NonNull String title, @NonNull String description) {
+        repository.insertItem(ListCategory.INBOX, 0, new ListItem(title, description));
+        currentCategory.setValue(ListCategory.INBOX);
+    }
+
     public void deleteItem(String id) {
         if (id == null) {
             return;

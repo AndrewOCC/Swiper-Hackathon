@@ -2,6 +2,7 @@ package com.listmanager;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -95,6 +96,59 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
         setupFab();
         setupDebugVersionBadge();
         observeViewModel();
+
+        handleShareIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleShareIntent(intent);
+    }
+
+    private void handleShareIntent(Intent intent) {
+        if (intent == null) {
+            return;
+        }
+        if (!Intent.ACTION_SEND.equals(intent.getAction())) {
+            return;
+        }
+        String mimeType = intent.getType();
+        if (!"text/plain".equals(mimeType)) {
+            return;
+        }
+
+        String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
+        String sharedSubject = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+
+        if (TextUtils.isEmpty(sharedText)) {
+            return;
+        }
+
+        String text = sharedText.trim();
+        String title;
+        String description;
+
+        if (!TextUtils.isEmpty(sharedSubject)) {
+            title = sharedSubject.trim();
+            description = text;
+        } else {
+            // Use the first line as title, everything after as description.
+            int newline = text.indexOf('\n');
+            if (newline > 0) {
+                title = text.substring(0, newline).trim();
+                description = text.substring(newline + 1).trim();
+            } else {
+                title = text;
+                description = "";
+            }
+        }
+
+        // Consume the intent so rotation / back-stack doesn't re-add the item.
+        setIntent(new Intent(this, MainActivity.class));
+
+        viewModel.receiveSharedText(title, description);
     }
 
     private int resolveThemeColor(int attr) {
