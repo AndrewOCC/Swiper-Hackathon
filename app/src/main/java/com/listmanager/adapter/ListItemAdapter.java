@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.listmanager.ListItemSwipeController;
 import com.listmanager.R;
 import com.listmanager.model.ListItem;
 
@@ -30,12 +31,18 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
     private final List<ListItem> items = new ArrayList<>();
     private EditCallback editCallback;
     @Nullable
+    private ListItemSwipeController swipeController;
+    @Nullable
     private String editingItemId;
     @Nullable
     private String pendingFocusItemId;
 
     public void setEditCallback(@Nullable EditCallback editCallback) {
         this.editCallback = editCallback;
+    }
+
+    public void setSwipeController(@Nullable ListItemSwipeController swipeController) {
+        this.swipeController = swipeController;
     }
 
     public void setEditingItemId(@Nullable String editingItemId) {
@@ -114,6 +121,9 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         ListItem item = items.get(position);
         boolean editing = item.getId().equals(editingItemId);
         holder.bind(item, editing, editCallback);
+        if (swipeController != null) {
+            swipeController.attachToItem(holder.itemView, position);
+        }
         if (editing && item.getId().equals(pendingFocusItemId)) {
             holder.focusTitle();
             pendingFocusItemId = null;

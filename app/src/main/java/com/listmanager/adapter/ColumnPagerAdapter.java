@@ -11,7 +11,7 @@ import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.listmanager.ListItemSwipeTouchListener;
+import com.listmanager.ListItemSwipeController;
 import com.listmanager.R;
 import com.listmanager.model.ListCategory;
 import com.listmanager.model.ListItem;
@@ -29,7 +29,6 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
 
     private final LifecycleOwner lifecycleOwner;
     private final MainViewModel viewModel;
-    private final RecyclerView.OnItemTouchListener panelBlankAreaListener;
     private int horizontalPadding;
     private int bottomPadding;
     private int extraHorizontalInset;
@@ -42,13 +41,11 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
     public ColumnPagerAdapter(@NonNull LifecycleOwner lifecycleOwner,
                               @NonNull MainViewModel viewModel,
                               int horizontalPadding,
-                              int bottomPadding,
-                              @NonNull RecyclerView.OnItemTouchListener panelBlankAreaListener) {
+                              int bottomPadding) {
         this.lifecycleOwner = lifecycleOwner;
         this.viewModel = viewModel;
         this.horizontalPadding = horizontalPadding;
         this.bottomPadding = bottomPadding;
-        this.panelBlankAreaListener = panelBlankAreaListener;
 
         editingItemObserver = editingItemId -> {
             for (ColumnPageViewHolder holder : pageHolders) {
@@ -114,6 +111,7 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
 
         private final RecyclerView recyclerView;
         private final ListItemAdapter listAdapter;
+        private ListItemSwipeController swipeController;
         private Observer<List<ListItem>> itemsObserver;
         private ListCategory boundCategory;
 
@@ -149,27 +147,12 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
                 ((ViewGroup) pageParent).setClipChildren(false);
             }
 
-            itemsObserver = items -> {
-                listAdapter.setEditingItemId(viewModel.getEditingItemIdValue());
-                listAdapter.submitList(items);
-
-                String editingId = viewModel.getEditingItemIdValue();
-                if (editingId != null && category == viewModel.getCurrentCategoryValue()) {
-                    int position = indexOfItem(items, editingId);
-                    if (position >= 0) {
-                        listAdapter.requestFocusForItem(recyclerView, editingId);
-                    }
-                }
-            };
-            viewModel.observeItems(category).observe(lifecycleOwner, itemsObserver);
-            listAdapter.setEditingItemId(viewModel.getEditingItemIdValue());
-
-            ListItemSwipeTouchListener itemSwipeListener = new ListItemSwipeTouchListener(
+            swipeController = new ListItemSwipeController(
                     recyclerView,
                     () -> boundCategory,
                     viewModel::getEditingItemIdValue,
                     listAdapter::getItemIdAt,
-                    new ListItemSwipeTouchListener.Callback() {
+                    new ListItemSwipeController.Callback() {
                         @Override
                         public void onSwipeLeft(int position) {
                             viewModel.swipeLeft(boundCategory, position);
@@ -191,10 +174,22 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
                         }
                     }
             );
-            recyclerView.addOnItemTouchListener(itemSwipeListener);
-            recyclerView.setTag(R.id.tag_item_touch_listener, itemSwipeListener);
-            recyclerView.addOnItemTouchListener(panelBlankAreaListener);
-            recyclerView.setTag(R.id.tag_panel_touch_listener, panelBlankAreaListener);
+            listAdapter.setSwipeController(swipeController);
+
+            itemsObserver = items -> {
+                listAdapter.setEditingItemId(viewModel.getEditingItemIdValue());
+                listAdapter.submitList(items);
+
+                String editingId = viewModel.getEditingItemIdValue();
+                if (editingId != null && category == viewModel.getCurrentCategoryValue()) {
+                    int position = indexOfItem(items, editingId);
+                    if (position >= 0) {
+                        listAdapter.requestFocusForItem(recyclerView, editingId);
+                    }
+                }
+            };
+            viewModel.observeItems(category).observe(lifecycleOwner, itemsObserver);
+            listAdapter.setEditingItemId(viewModel.getEditingItemIdValue());
         }
 
         void applyEditingItemId(@Nullable String editingItemId) {
@@ -229,18 +224,10 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             if (itemsObserver != null && boundCategory != null) {
                 viewModel.observeItems(boundCategory).removeObserver(itemsObserver);
             }
-            Object itemListenerTag = recyclerView.getTag(R.id.tag_item_touch_listener);
-            if (itemListenerTag instanceof RecyclerView.OnItemTouchListener) {
-                recyclerView.removeOnItemTouchListener((RecyclerView.OnItemTouchListener) itemListenerTag);
-            }
-            Object panelListenerTag = recyclerView.getTag(R.id.tag_panel_touch_listener);
-            if (panelListenerTag instanceof RecyclerView.OnItemTouchListener) {
-                recyclerView.removeOnItemTouchListener((RecyclerView.OnItemTouchListener) panelListenerTag);
-            }
+            listAdapter.setSwipeController(null);
+            swipeController = null;
             itemsObserver = null;
             boundCategory = null;
-            recyclerView.setTag(R.id.tag_item_touch_listener, null);
-            recyclerView.setTag(R.id.tag_panel_touch_listener, null);
         }
 
         private int indexOfItem(@Nullable List<ListItem> items, @NonNull String itemId) {

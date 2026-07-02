@@ -16,12 +16,9 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.viewpager2.widget.CompositePageTransformer;
-import androidx.viewpager2.widget.MarginPageTransformer;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.appbar.AppBarLayout;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.listmanager.adapter.ColumnPagerAdapter;
 import com.listmanager.model.ListCategory;
 import com.listmanager.model.ListItem;
@@ -43,7 +40,8 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
     private ImageButton settingsButton;
     private View bottomEdgeSwipeZone;
     private ViewPager2 columnPager;
-    private FloatingActionButton fabAddItem;
+    private ImageButton fabAddItem;
+    private TextView debugVersionBadge;
 
     private TabBarAnimator tabBarAnimator;
 
@@ -73,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
         bottomEdgeSwipeZone = findViewById(R.id.bottom_edge_swipe_zone);
         columnPager = findViewById(R.id.column_pager);
         fabAddItem = findViewById(R.id.fab_add_item);
+        debugVersionBadge = findViewById(R.id.debug_version_badge);
 
         panelDragListener = new PanelDragListener(this);
 
@@ -94,13 +93,8 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
         setupTabBar();
         setupPanelSwiping();
         setupFab();
+        setupDebugVersionBadge();
         observeViewModel();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        columnPager.setUserInputEnabled(true);
     }
 
     private int resolveThemeColor(int attr) {
@@ -118,11 +112,11 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
                 this,
                 viewModel,
                 listHorizontalPadding,
-                listBottomPadding + bottomEdgeHeight,
-                panelDragListener.asRecyclerBlankAreaListener()
+                listBottomPadding + bottomEdgeHeight
         );
         columnPager.setAdapter(columnPagerAdapter);
         columnPager.setOffscreenPageLimit(2);
+        columnPager.setUserInputEnabled(true);
         columnPager.setCurrentItem(ListCategory.INBOX.getPanelIndex(), false);
 
         columnPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -139,9 +133,6 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
     }
 
     private void setupColumnPagerEffects() {
-        int leftPeekPx = getResources().getDimensionPixelSize(R.dimen.column_page_peek);
-        int gapPx = getResources().getDimensionPixelSize(R.dimen.column_page_gap);
-
         ViewGroup contentFrame = findViewById(R.id.content_frame);
         contentFrame.setClipChildren(false);
         columnPager.setClipChildren(false);
@@ -154,18 +145,8 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
             }
             pagerRecycler.setClipToPadding(false);
             pagerRecycler.setClipChildren(false);
-            // Left-only peek avoids a full-height strip on the right where the FAB sits.
-            pagerRecycler.setPadding(leftPeekPx, 0, 0, 0);
             pagerRecycler.setOverScrollMode(View.OVER_SCROLL_NEVER);
             disableClippingOnPagerPages(pagerRecycler);
-
-            CompositePageTransformer transformer = new CompositePageTransformer();
-            transformer.addTransformer(new MarginPageTransformer(gapPx));
-            transformer.addTransformer((page, position) -> {
-                float absPos = Math.min(1f, Math.abs(position));
-                page.setAlpha(0.7f + (1f - absPos) * 0.3f);
-            });
-            columnPager.setPageTransformer(transformer);
         });
     }
 
@@ -211,6 +192,25 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
             view.setLayoutParams(params);
             return windowInsets;
         });
+
+        ViewCompat.setOnApplyWindowInsetsListener(debugVersionBadge, (view, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            int baseMargin = getResources().getDimensionPixelSize(R.dimen.fab_margin);
+            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+            params.bottomMargin = baseMargin + insets.bottom;
+            params.leftMargin = baseMargin + insets.left;
+            view.setLayoutParams(params);
+            return windowInsets;
+        });
+    }
+
+    private void setupDebugVersionBadge() {
+        if (BuildConfig.DEBUG) {
+            debugVersionBadge.setVisibility(View.VISIBLE);
+            debugVersionBadge.setText(getString(R.string.debug_version_format, BuildConfig.VERSION_NAME));
+        } else {
+            debugVersionBadge.setVisibility(View.GONE);
+        }
     }
 
     private void setupFab() {

@@ -45,16 +45,41 @@
             android:elevation="4dp"
             android:focusable="true" />
 
+        <ImageButton
+            android:id="@+id/fab_add_item"
+            android:layout_width="@dimen/fab_size"
+            android:layout_height="@dimen/fab_size"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="@dimen/fab_margin"
+            android:background="@drawable/fab_background"
+            android:contentDescription="@string/cd_add_item"
+            android:elevation="6dp"
+            android:padding="16dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_add"
+            app:tint="?attr/colorOnPrimaryContainer" />
+
     </FrameLayout>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_add_item"
+    <TextView
+        android:id="@+id/debug_version_badge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
+        android:layout_gravity="bottom|start"
         android:layout_margin="@dimen/fab_margin"
-        android:contentDescription="@string/cd_add_item"
-        android:elevation="8dp"
-        app:srcCompat="@drawable/ic_add" />
+        android:background="@drawable/debug_version_background"
+        android:clickable="false"
+        android:elevation="10dp"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        android:paddingStart="8dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="4dp"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="@android:color/white"
+        android:visibility="gone"
+        tools:text="v1.5.5"
+        tools:visibility="visible" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

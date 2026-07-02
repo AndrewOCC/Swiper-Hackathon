@@ -5,7 +5,9 @@
     android:layout_height="wrap_content"
     android:layout_marginTop="8dp"
     android:layout_marginBottom="8dp"
-    android:clipChildren="false">
+    android:clickable="false"
+    android:clipChildren="false"
+    android:focusable="false">
 
     <LinearLayout
         android:id="@+id/swipe_background_left"
@@ -59,8 +61,8 @@
         style="@style/Widget.ListManager.Card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:clickable="true"
-        android:focusable="true">
+        android:clickable="false"
+        android:focusable="false">
 
         <LinearLayout
             android:layout_width="match_parent"

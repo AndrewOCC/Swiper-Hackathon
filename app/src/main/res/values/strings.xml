@@ -14,4 +14,5 @@
     <string name="hint_item_title">Title</string>
     <string name="hint_item_description">Description</string>
     <string name="action_delete">Delete</string>
+    <string name="debug_version_format">v%1$s</string>
 </resources>
