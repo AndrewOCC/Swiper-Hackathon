@@ -146,21 +146,7 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
             pagerRecycler.setClipToPadding(false);
             pagerRecycler.setClipChildren(false);
             pagerRecycler.setOverScrollMode(View.OVER_SCROLL_NEVER);
-            disableClippingOnPagerPages(pagerRecycler);
         });
-    }
-
-    private void disableClippingOnPagerPages(@NonNull RecyclerView pagerRecycler) {
-        for (int i = 0; i < pagerRecycler.getChildCount(); i++) {
-            View page = pagerRecycler.getChildAt(i);
-            if (page instanceof ViewGroup) {
-                ((ViewGroup) page).setClipChildren(false);
-                ((ViewGroup) page).setClipToPadding(false);
-            }
-        }
-        pagerRecycler.addOnLayoutChangeListener((view, left, top, right, bottom,
-                                                 oldLeft, oldTop, oldRight, oldBottom) ->
-                disableClippingOnPagerPages(pagerRecycler));
     }
 
     private void setupEdgeToEdge() {
