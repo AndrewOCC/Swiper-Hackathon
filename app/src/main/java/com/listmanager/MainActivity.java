@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
     }
 
     private void setupColumnPagerEffects() {
-        int peekPx = getResources().getDimensionPixelSize(R.dimen.column_page_peek);
+        int leftPeekPx = getResources().getDimensionPixelSize(R.dimen.column_page_peek);
         int gapPx = getResources().getDimensionPixelSize(R.dimen.column_page_gap);
 
         ViewGroup contentFrame = findViewById(R.id.content_frame);
@@ -154,7 +154,8 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
             }
             pagerRecycler.setClipToPadding(false);
             pagerRecycler.setClipChildren(false);
-            pagerRecycler.setPadding(peekPx, 0, peekPx, 0);
+            // Left-only peek avoids a full-height strip on the right where the FAB sits.
+            pagerRecycler.setPadding(leftPeekPx, 0, 0, 0);
             pagerRecycler.setOverScrollMode(View.OVER_SCROLL_NEVER);
             disableClippingOnPagerPages(pagerRecycler);
 

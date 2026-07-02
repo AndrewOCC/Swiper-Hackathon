@@ -114,6 +114,7 @@ public class PanelDragListener {
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+                boolean wasDragging = dragging;
                 if (velocityTracker != null) {
                     velocityTracker.addMovement(event);
                     velocityTracker.computeCurrentVelocity(1000);
@@ -128,7 +129,7 @@ public class PanelDragListener {
                 }
                 tracking = false;
                 dragging = false;
-                return dragging;
+                return wasDragging;
 
             default:
                 return false;

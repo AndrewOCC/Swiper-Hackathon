@@ -4,7 +4,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
 import android.graphics.Rect;
-import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -73,7 +72,6 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
     private ItemSwipeAction activeAction;
     private boolean paused;
     private boolean panelNavigationBlocked;
-    private boolean trackingCard;
     private VelocityTracker velocityTracker;
 
     private final List<PendingDismissData> pendingDismisses = new ArrayList<>();
@@ -111,16 +109,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
     @Override
     public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent event) {
         handleTouchEvent(event);
-        if (swiping) {
-            return true;
-        }
-        int action = event.getActionMasked();
-        if (trackingCard && (action == MotionEvent.ACTION_MOVE
-                || action == MotionEvent.ACTION_UP
-                || action == MotionEvent.ACTION_CANCEL)) {
-            return true;
-        }
-        return false;
+        return swiping;
     }
 
     @Override
@@ -157,12 +146,9 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                         downY = event.getRawY();
                         velocityTracker = VelocityTracker.obtain();
                         velocityTracker.addMovement(event);
-                        trackingCard = true;
                     } else {
                         resetGestureState(false);
                     }
-                } else {
-                    trackingCard = false;
                 }
                 break;
 
@@ -357,7 +343,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         activeDismissAnimations++;
 
         float targetTranslation = dismissToRight ? viewWidth : -viewWidth;
-        float currentTranslation = foreground.getTranslationX();
+        float currentTranslation = itemView.getTranslationX();
         long remainingDuration = (long) (animationTime
                 * (Math.abs(targetTranslation - currentTranslation) / viewWidth));
         if (remainingDuration < 50) {
@@ -428,11 +414,6 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
             }
         }
 
-        long time = SystemClock.uptimeMillis();
-        MotionEvent cancelEvent = MotionEvent.obtain(
-                time, time, MotionEvent.ACTION_CANCEL, 0, 0, 0);
-        recyclerView.dispatchTouchEvent(cancelEvent);
-
         pendingDismisses.clear();
         animatingPosition = ListView.INVALID_POSITION;
     }
@@ -481,7 +462,6 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         activeAction = null;
         downPosition = ListView.INVALID_POSITION;
         swiping = false;
-        trackingCard = false;
     }
 
     private void blockPanelNavigation(boolean block) {
@@ -497,7 +477,6 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                 ((ViewGroup) parentView).requestDisallowInterceptTouchEvent(block);
             }
             if (parentView instanceof ViewPager2) {
-                ((ViewPager2) parentView).setUserInputEnabled(!block);
                 break;
             }
             child = parentView;
