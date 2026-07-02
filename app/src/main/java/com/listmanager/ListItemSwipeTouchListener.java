@@ -26,6 +26,7 @@ import com.listmanager.model.ListCategory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListener {
@@ -39,6 +40,8 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
     private final RecyclerView recyclerView;
     private final Callback callback;
     private final Supplier<ListCategory> categorySupplier;
+    private final Supplier<String> editingItemIdSupplier;
+    private final IntFunction<String> itemIdAtPosition;
     private final int moveBackgroundColor;
     private final int deleteBackgroundColor;
     private final int deleteTextColor;
@@ -73,9 +76,13 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
 
     public ListItemSwipeTouchListener(@NonNull RecyclerView recyclerView,
                                       @NonNull Supplier<ListCategory> categorySupplier,
+                                      @NonNull Supplier<String> editingItemIdSupplier,
+                                      @NonNull IntFunction<String> itemIdAtPosition,
                                       @NonNull Callback callback) {
         this.recyclerView = recyclerView;
         this.categorySupplier = categorySupplier;
+        this.editingItemIdSupplier = editingItemIdSupplier;
+        this.itemIdAtPosition = itemIdAtPosition;
         this.callback = callback;
 
         Context context = recyclerView.getContext();
@@ -123,8 +130,12 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                 downView = findTouchedChild(event);
                 if (downView != null
                         && animatingPosition != recyclerView.getChildAdapterPosition(downView)) {
-                    bindSwipeViews(downView);
                     downPosition = recyclerView.getChildAdapterPosition(downView);
+                    if (isEditingPosition(downPosition)) {
+                        resetGestureState(false);
+                        break;
+                    }
+                    bindSwipeViews(downView);
                     if (downPosition != RecyclerView.NO_POSITION) {
                         alpha = foregroundView.getAlpha();
                         downX = event.getRawX();
@@ -214,6 +225,18 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         }
 
         return swiping;
+    }
+
+    private boolean isEditingPosition(int position) {
+        if (position == RecyclerView.NO_POSITION) {
+            return false;
+        }
+        String editingId = editingItemIdSupplier.get();
+        if (editingId == null) {
+            return false;
+        }
+        String itemId = itemIdAtPosition.apply(position);
+        return editingId.equals(itemId);
     }
 
     private View findTouchedChild(MotionEvent event) {

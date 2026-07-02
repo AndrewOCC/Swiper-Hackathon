@@ -8,4 +8,5 @@
     <dimen name="panel_swipe_threshold">56dp</dimen>
     <dimen name="column_page_peek">36dp</dimen>
     <dimen name="column_page_gap">8dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
 </resources>

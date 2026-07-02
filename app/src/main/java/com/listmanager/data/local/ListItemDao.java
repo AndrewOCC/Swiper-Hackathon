@@ -27,8 +27,14 @@ public interface ListItemDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<ListItemEntity> items);
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insert(ListItemEntity item);
+
     @Update
     void update(ListItemEntity item);
+
+    @Query("SELECT * FROM list_items WHERE id = :id LIMIT 1")
+    ListItemEntity getById(String id);
 
     @Query("DELETE FROM list_items WHERE id = :id")
     void deleteById(String id);

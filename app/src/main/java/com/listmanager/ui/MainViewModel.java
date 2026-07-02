@@ -17,6 +17,7 @@ public class MainViewModel extends AndroidViewModel {
 
     private final ItemRepository repository;
     private final MutableLiveData<ListCategory> currentCategory = new MutableLiveData<>(ListCategory.INBOX);
+    private final MutableLiveData<String> editingItemId = new MutableLiveData<>();
 
     public MainViewModel(@NonNull Application application) {
         super(application);
@@ -25,6 +26,14 @@ public class MainViewModel extends AndroidViewModel {
 
     public LiveData<ListCategory> getCurrentCategory() {
         return currentCategory;
+    }
+
+    public LiveData<String> getEditingItemId() {
+        return editingItemId;
+    }
+
+    public String getEditingItemIdValue() {
+        return editingItemId.getValue();
     }
 
     public LiveData<List<ListItem>> observeItems(ListCategory category) {
@@ -96,5 +105,30 @@ public class MainViewModel extends AndroidViewModel {
     public void refreshItems() {
         repository.resetSampleItems();
         currentCategory.setValue(ListCategory.INBOX);
+        editingItemId.setValue(null);
+    }
+
+    public ListItem createItemAt(ListCategory category, int insertIndex) {
+        ListItem item = new ListItem("", "");
+        repository.insertItem(category, insertIndex, item);
+        editingItemId.setValue(item.getId());
+        return item;
+    }
+
+    public void saveItem(String id, String title, String description) {
+        String trimmedTitle = title != null ? title.trim() : "";
+        String trimmedDescription = description != null ? description.trim() : "";
+        if (trimmedTitle.isEmpty() && trimmedDescription.isEmpty()) {
+            repository.deleteItemById(id);
+        } else {
+            repository.updateItem(id, trimmedTitle, trimmedDescription);
+        }
+        if (id.equals(editingItemId.getValue())) {
+            editingItemId.setValue(null);
+        }
+    }
+
+    public void clearEditingItem() {
+        editingItemId.setValue(null);
     }
 }

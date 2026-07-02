@@ -5,6 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -34,6 +35,10 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
     private int extraHorizontalInset;
     private int extraBottomInset;
 
+    private final ColumnPageViewHolder[] pageHolders = new ColumnPageViewHolder[CATEGORIES.length];
+    @Nullable
+    private Observer<String> editingItemObserver;
+
     public ColumnPagerAdapter(@NonNull LifecycleOwner lifecycleOwner,
                               @NonNull MainViewModel viewModel,
                               int horizontalPadding,
@@ -44,12 +49,36 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
         this.horizontalPadding = horizontalPadding;
         this.bottomPadding = bottomPadding;
         this.panelBlankAreaListener = panelBlankAreaListener;
+
+        editingItemObserver = editingItemId -> {
+            for (ColumnPageViewHolder holder : pageHolders) {
+                if (holder != null) {
+                    holder.applyEditingItemId(editingItemId);
+                }
+            }
+        };
+        viewModel.getEditingItemId().observe(lifecycleOwner, editingItemObserver);
     }
 
     public void setPagePadding(int extraHorizontalInset, int extraBottomInset) {
         this.extraHorizontalInset = extraHorizontalInset;
         this.extraBottomInset = extraBottomInset;
         notifyDataSetChanged();
+    }
+
+    public int getFirstVisibleInsertIndex(@NonNull ListCategory category) {
+        ColumnPageViewHolder holder = pageHolders[category.getPanelIndex()];
+        if (holder == null) {
+            return 0;
+        }
+        return holder.getFirstVisibleInsertIndex();
+    }
+
+    public void beginEditingItem(@NonNull ListCategory category, @NonNull String itemId, int insertIndex) {
+        ColumnPageViewHolder holder = pageHolders[category.getPanelIndex()];
+        if (holder != null) {
+            holder.beginEditingItem(itemId, insertIndex);
+        }
     }
 
     @NonNull
@@ -62,12 +91,17 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull ColumnPageViewHolder holder, int position) {
+        pageHolders[position] = holder;
         holder.bind(CATEGORIES[position]);
     }
 
     @Override
     public void onViewRecycled(@NonNull ColumnPageViewHolder holder) {
         holder.unbind();
+        int index = holder.getBindingAdapterPosition();
+        if (index >= 0 && index < pageHolders.length) {
+            pageHolders[index] = null;
+        }
         super.onViewRecycled(holder);
     }
 
@@ -87,6 +121,8 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             super(itemView);
             recyclerView = itemView.findViewById(R.id.column_recycler_view);
             listAdapter = new ListItemAdapter();
+            listAdapter.setEditCallback((id, title, description) ->
+                    viewModel.saveItem(id, title, description));
             recyclerView.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
             recyclerView.setAdapter(listAdapter);
             applyRecyclerPadding();
@@ -106,12 +142,26 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             boundCategory = category;
             applyRecyclerPadding();
 
-            itemsObserver = items -> listAdapter.submitList(items);
+            itemsObserver = items -> {
+                listAdapter.setEditingItemId(viewModel.getEditingItemIdValue());
+                listAdapter.submitList(items);
+
+                String editingId = viewModel.getEditingItemIdValue();
+                if (editingId != null && category == viewModel.getCurrentCategoryValue()) {
+                    int position = indexOfItem(items, editingId);
+                    if (position >= 0) {
+                        listAdapter.requestFocusForItem(recyclerView, editingId);
+                    }
+                }
+            };
             viewModel.observeItems(category).observe(lifecycleOwner, itemsObserver);
+            listAdapter.setEditingItemId(viewModel.getEditingItemIdValue());
 
             ListItemSwipeTouchListener itemSwipeListener = new ListItemSwipeTouchListener(
                     recyclerView,
                     () -> boundCategory,
+                    viewModel::getEditingItemIdValue,
+                    listAdapter::getItemIdAt,
                     new ListItemSwipeTouchListener.Callback() {
                         @Override
                         public void onSwipeLeft(int position) {
@@ -130,6 +180,34 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             recyclerView.setTag(R.id.tag_panel_touch_listener, panelBlankAreaListener);
         }
 
+        void applyEditingItemId(@Nullable String editingItemId) {
+            if (boundCategory == null) {
+                return;
+            }
+            listAdapter.setEditingItemId(editingItemId);
+            if (editingItemId != null && boundCategory == viewModel.getCurrentCategoryValue()) {
+                listAdapter.requestFocusForItem(recyclerView, editingItemId);
+            }
+        }
+
+        void beginEditingItem(@NonNull String itemId, int insertIndex) {
+            LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+            if (layoutManager != null) {
+                layoutManager.scrollToPositionWithOffset(insertIndex, 0);
+            }
+            listAdapter.setEditingItemId(itemId);
+            listAdapter.requestFocusForItem(recyclerView, itemId);
+        }
+
+        int getFirstVisibleInsertIndex() {
+            LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+            if (layoutManager == null) {
+                return 0;
+            }
+            int firstVisible = layoutManager.findFirstVisibleItemPosition();
+            return firstVisible == RecyclerView.NO_POSITION ? 0 : firstVisible;
+        }
+
         void unbind() {
             if (itemsObserver != null && boundCategory != null) {
                 viewModel.observeItems(boundCategory).removeObserver(itemsObserver);
@@ -146,6 +224,18 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             boundCategory = null;
             recyclerView.setTag(R.id.tag_item_touch_listener, null);
             recyclerView.setTag(R.id.tag_panel_touch_listener, null);
+        }
+
+        private int indexOfItem(@Nullable List<ListItem> items, @NonNull String itemId) {
+            if (items == null) {
+                return -1;
+            }
+            for (int i = 0; i < items.size(); i++) {
+                if (itemId.equals(items.get(i).getId())) {
+                    return i;
+                }
+            }
+            return -1;
         }
     }
 }

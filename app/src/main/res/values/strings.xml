@@ -10,5 +10,8 @@
     <string name="category_high_priority">High Priority</string>
 
     <string name="cd_panel_swipe_zone">Swipe left or right to change list</string>
+    <string name="cd_add_item">Add item to current list</string>
+    <string name="hint_item_title">Title</string>
+    <string name="hint_item_description">Description</string>
     <string name="action_delete">Delete</string>
 </resources>

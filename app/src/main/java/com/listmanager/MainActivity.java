@@ -21,8 +21,10 @@ import androidx.viewpager2.widget.MarginPageTransformer;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.listmanager.adapter.ColumnPagerAdapter;
 import com.listmanager.model.ListCategory;
+import com.listmanager.model.ListItem;
 import com.listmanager.ui.MainViewModel;
 import com.listmanager.ui.MainViewModelFactory;
 import com.listmanager.ui.TabBarAnimator;
@@ -41,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
     private ImageButton settingsButton;
     private View bottomEdgeSwipeZone;
     private ViewPager2 columnPager;
+    private FloatingActionButton fabAddItem;
 
     private TabBarAnimator tabBarAnimator;
 
@@ -69,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
         settingsButton = findViewById(R.id.settings_button);
         bottomEdgeSwipeZone = findViewById(R.id.bottom_edge_swipe_zone);
         columnPager = findViewById(R.id.column_pager);
+        fabAddItem = findViewById(R.id.fab_add_item);
 
         panelDragListener = new PanelDragListener(this);
 
@@ -89,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
         setupEdgeToEdge();
         setupTabBar();
         setupPanelSwiping();
+        setupFab();
         observeViewModel();
     }
 
@@ -174,6 +179,25 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), insets.bottom);
             return windowInsets;
+        });
+
+        ViewCompat.setOnApplyWindowInsetsListener(fabAddItem, (view, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            int baseMargin = getResources().getDimensionPixelSize(R.dimen.fab_margin);
+            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+            params.bottomMargin = baseMargin + insets.bottom;
+            params.rightMargin = baseMargin + insets.right;
+            view.setLayoutParams(params);
+            return windowInsets;
+        });
+    }
+
+    private void setupFab() {
+        fabAddItem.setOnClickListener(view -> {
+            ListCategory category = viewModel.getCurrentCategoryValue();
+            int insertIndex = columnPagerAdapter.getFirstVisibleInsertIndex(category);
+            ListItem item = viewModel.createItemAt(category, insertIndex);
+            columnPagerAdapter.beginEditingItem(category, item.getId(), insertIndex);
         });
     }
 
