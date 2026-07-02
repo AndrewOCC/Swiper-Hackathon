@@ -69,7 +69,7 @@ Create these workspace labels before or after import:
 
 ## 5. Latest APK
 
-https://github.com/AndrewOCC/Swiper-Hackathon/releases/download/list-manager-1.3.0/list-manager-debug.apk
+https://github.com/AndrewOCC/Swiper-Hackathon/releases/download/list-manager-latest/list-manager-debug.apk
 
 ## 6. Re-run from Cursor (after Linear auth)
 
