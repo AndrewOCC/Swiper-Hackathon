@@ -136,6 +136,10 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
     }
 
     static void resetSwipeViewState(@NonNull View itemView) {
+        itemView.animate().cancel();
+        itemView.setTranslationX(0f);
+        itemView.setTranslationZ(0f);
+
         View foreground = itemView.findViewById(R.id.swipe_foreground);
         if (foreground != null) {
             foreground.animate().cancel();

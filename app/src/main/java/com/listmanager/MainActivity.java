@@ -150,6 +150,7 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
             pagerRecycler.setClipChildren(false);
             pagerRecycler.setPadding(peekPx, 0, peekPx, 0);
             pagerRecycler.setOverScrollMode(View.OVER_SCROLL_NEVER);
+            disableClippingOnPagerPages(pagerRecycler);
 
             CompositePageTransformer transformer = new CompositePageTransformer();
             transformer.addTransformer(new MarginPageTransformer(gapPx));
@@ -159,6 +160,19 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
             });
             columnPager.setPageTransformer(transformer);
         });
+    }
+
+    private void disableClippingOnPagerPages(@NonNull RecyclerView pagerRecycler) {
+        for (int i = 0; i < pagerRecycler.getChildCount(); i++) {
+            View page = pagerRecycler.getChildAt(i);
+            if (page instanceof ViewGroup) {
+                ((ViewGroup) page).setClipChildren(false);
+                ((ViewGroup) page).setClipToPadding(false);
+            }
+        }
+        pagerRecycler.addOnLayoutChangeListener((view, left, top, right, bottom,
+                                                 oldLeft, oldTop, oldRight, oldBottom) ->
+                disableClippingOnPagerPages(pagerRecycler));
     }
 
     private void setupEdgeToEdge() {

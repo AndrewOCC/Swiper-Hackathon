@@ -125,6 +125,8 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
                     viewModel.saveItem(id, title, description));
             recyclerView.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
             recyclerView.setAdapter(listAdapter);
+            recyclerView.setClipChildren(false);
+            recyclerView.setClipToPadding(false);
             applyRecyclerPadding();
         }
 
@@ -141,6 +143,11 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             unbind();
             boundCategory = category;
             applyRecyclerPadding();
+
+            View pageParent = (View) itemView.getParent();
+            if (pageParent instanceof ViewGroup) {
+                ((ViewGroup) pageParent).setClipChildren(false);
+            }
 
             itemsObserver = items -> {
                 listAdapter.setEditingItemId(viewModel.getEditingItemIdValue());

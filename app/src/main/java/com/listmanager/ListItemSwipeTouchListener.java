@@ -10,6 +10,7 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -71,6 +72,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
     private ImageView rightIcon;
     private ItemSwipeAction activeAction;
     private boolean paused;
+    private boolean panelNavigationBlocked;
     private VelocityTracker velocityTracker;
 
     private final List<PendingDismissData> pendingDismisses = new ArrayList<>();
@@ -144,6 +146,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                         downY = event.getRawY();
                         velocityTracker = VelocityTracker.obtain();
                         velocityTracker.addMovement(event);
+                        blockPanelNavigation(true);
                     } else {
                         resetGestureState(false);
                     }
@@ -206,18 +209,25 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                 if (!swiping && Math.abs(deltaX) > slop && Math.abs(deltaY) < Math.abs(deltaX) / 2f) {
                     activeAction = resolveAction(deltaX);
                     if (activeAction.type == ItemSwipeAction.Type.NONE) {
+                        blockPanelNavigation(false);
                         resetGestureState(false);
                         break;
                     }
                     applyBackground(activeAction, deltaX < 0);
                     swiping = true;
                     swipeAnchorX = event.getRawX();
-                    setViewPagerInputEnabled(false);
+                    downView.setTranslationZ(recyclerView.getResources().getDisplayMetrics().density * 8f);
+                }
+
+                if (!swiping && Math.abs(deltaY) > slop && Math.abs(deltaY) > Math.abs(deltaX)) {
+                    blockPanelNavigation(false);
+                    resetGestureState(true);
+                    break;
                 }
 
                 if (swiping && activeAction != null) {
                     float translation = event.getRawX() - swipeAnchorX;
-                    foregroundView.setTranslationX(translation);
+                    downView.setTranslationX(translation);
                     if (activeAction.type == ItemSwipeAction.Type.DELETE) {
                         float progress = Math.min(1f, Math.abs(translation) / (viewWidth * 0.75f));
                         foregroundView.setAlpha(Math.max(0.2f, alpha * (1f - progress * 0.8f)));
@@ -334,7 +344,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
 
         foreground.animate().cancel();
         foreground.animate()
-                .translationX(targetTranslation)
+                .translationX(0f)
                 .alpha(action.type == ItemSwipeAction.Type.DELETE ? 0f : alpha)
                 .setDuration(remainingDuration)
                 .setListener(new AnimatorListenerAdapter() {
@@ -348,13 +358,26 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                     }
                 })
                 .start();
+        itemView.animate().cancel();
+        itemView.animate()
+                .translationX(targetTranslation)
+                .setDuration(remainingDuration)
+                .start();
     }
 
     private void cancelSwipeAnimation() {
+        if (downView != null) {
+            downView.animate().cancel();
+            downView.animate()
+                    .translationX(0)
+                    .translationZ(0f)
+                    .setDuration(animationTime)
+                    .setListener(null)
+                    .start();
+        }
         if (foregroundView != null) {
             foregroundView.animate().cancel();
             foregroundView.animate()
-                    .translationX(0)
                     .alpha(alpha)
                     .setDuration(animationTime)
                     .setListener(null)
@@ -396,9 +419,12 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         View foreground = itemView.findViewById(R.id.swipe_foreground);
         if (foreground != null) {
             foreground.animate().cancel();
-            foreground.setTranslationX(0f);
             foreground.setAlpha(1f);
         }
+
+        itemView.animate().cancel();
+        itemView.setTranslationX(0f);
+        itemView.setTranslationZ(0f);
 
         ViewGroup.LayoutParams params = itemView.getLayoutParams();
         if (params != null) {
@@ -418,8 +444,8 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
             velocityTracker.recycle();
             velocityTracker = null;
         }
-        if (swiping) {
-            setViewPagerInputEnabled(true);
+        if (swiping || panelNavigationBlocked) {
+            blockPanelNavigation(false);
         }
         downX = 0;
         downY = 0;
@@ -435,19 +461,23 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         swiping = false;
     }
 
-    private void setViewPagerInputEnabled(boolean enabled) {
-        View parent = recyclerView;
-        while (parent != null) {
-            if (!(parent.getParent() instanceof View)) {
-                return;
+    private void blockPanelNavigation(boolean block) {
+        panelNavigationBlocked = block;
+        View child = recyclerView;
+        while (child != null) {
+            ViewParent parent = child.getParent();
+            if (!(parent instanceof View)) {
+                break;
             }
-            parent = (View) parent.getParent();
-            if (parent instanceof ViewPager2) {
-                ViewPager2 viewPager = (ViewPager2) parent;
-                viewPager.setUserInputEnabled(enabled);
-                viewPager.requestDisallowInterceptTouchEvent(!enabled);
-                return;
+            View parentView = (View) parent;
+            if (parentView instanceof ViewGroup) {
+                ((ViewGroup) parentView).requestDisallowInterceptTouchEvent(block);
             }
+            if (parentView instanceof ViewPager2) {
+                ((ViewPager2) parentView).setUserInputEnabled(!block);
+                break;
+            }
+            child = parentView;
         }
     }
 
