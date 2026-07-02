@@ -1,6 +1,12 @@
 package com.listmanager;
 
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -11,9 +17,9 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * Uses RecyclerView's supported swipe helper instead of hand-rolled touch
- * interception. This keeps taps, vertical scroll, and ViewPager gestures in their
- * normal dispatch paths while still allowing horizontal card actions.
+ * Wraps ItemTouchHelper so card swipes stay on the standard AndroidX dispatch path
+ * (taps, vertical scroll and panel swipes are unaffected). Draws a coloured
+ * background on the RecyclerView canvas behind the sliding card.
  */
 public class ListItemSwipeController {
 
@@ -28,6 +34,8 @@ public class ListItemSwipeController {
     private final Supplier<ListCategory> categorySupplier;
     private final Supplier<String> editingItemIdSupplier;
     private final IntFunction<String> itemIdAtPosition;
+    private final int moveBackgroundColor;
+    private final int deleteBackgroundColor;
     private final ItemTouchHelper itemTouchHelper;
 
     public ListItemSwipeController(@NonNull RecyclerView recyclerView,
@@ -40,6 +48,11 @@ public class ListItemSwipeController {
         this.editingItemIdSupplier = editingItemIdSupplier;
         this.itemIdAtPosition = itemIdAtPosition;
         this.callback = callback;
+
+        Context ctx = recyclerView.getContext();
+        moveBackgroundColor = ContextCompat.getColor(ctx, R.color.swipe_move_background);
+        deleteBackgroundColor = ContextCompat.getColor(ctx, R.color.swipe_delete_background);
+
         itemTouchHelper = new ItemTouchHelper(new SwipeCallback());
     }
 
@@ -59,8 +72,7 @@ public class ListItemSwipeController {
         if (editingId == null) {
             return false;
         }
-        String itemId = itemIdAtPosition.apply(position);
-        return editingId.equals(itemId);
+        return editingId.equals(itemIdAtPosition.apply(position));
     }
 
     private int getAllowedSwipeDirections(int position) {
@@ -82,19 +94,21 @@ public class ListItemSwipeController {
     }
 
     private class SwipeCallback extends ItemTouchHelper.SimpleCallback {
+
+        private final Paint bgPaint = new Paint();
+
         SwipeCallback() {
             super(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT);
         }
 
         @Override
-        public int getMovementFlags(@NonNull RecyclerView recyclerView,
+        public int getMovementFlags(@NonNull RecyclerView rv,
                                     @NonNull RecyclerView.ViewHolder viewHolder) {
-            int position = viewHolder.getBindingAdapterPosition();
-            return makeMovementFlags(0, getAllowedSwipeDirections(position));
+            return makeMovementFlags(0, getAllowedSwipeDirections(viewHolder.getBindingAdapterPosition()));
         }
 
         @Override
-        public boolean onMove(@NonNull RecyclerView recyclerView,
+        public boolean onMove(@NonNull RecyclerView rv,
                               @NonNull RecyclerView.ViewHolder viewHolder,
                               @NonNull RecyclerView.ViewHolder target) {
             return false;
@@ -104,6 +118,7 @@ public class ListItemSwipeController {
         public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
             int position = viewHolder.getBindingAdapterPosition();
             if (position == RecyclerView.NO_POSITION) {
+                // Position lost; ask the adapter to rebind this holder so it snaps back.
                 RecyclerView.Adapter<?> adapter = viewHolder.getBindingAdapter();
                 if (adapter != null) {
                     adapter.notifyItemChanged(viewHolder.getAbsoluteAdapterPosition());
@@ -120,6 +135,51 @@ public class ListItemSwipeController {
         @Override
         public float getSwipeThreshold(@NonNull RecyclerView.ViewHolder viewHolder) {
             return 0.33f;
+        }
+
+        @Override
+        public void onChildDraw(@NonNull Canvas c,
+                                @NonNull RecyclerView rv,
+                                @NonNull RecyclerView.ViewHolder viewHolder,
+                                float dX, float dY,
+                                int actionState,
+                                boolean isCurrentlyActive) {
+            if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE && dX != 0) {
+                drawBackground(c, viewHolder.itemView, dX);
+            }
+            super.onChildDraw(c, rv, viewHolder, dX, dY, actionState, isCurrentlyActive);
+        }
+
+        private void drawBackground(@NonNull Canvas c,
+                                    @NonNull android.view.View itemView,
+                                    float dX) {
+            ListCategory cat = categorySupplier.get();
+            if (cat == null) cat = ListCategory.INBOX;
+
+            if (dX < 0) {
+                // Swiping left — revealed area is on the RIGHT of the card's original position
+                ItemSwipeAction action = ItemSwipeAction.forLeftSwipe(cat, moveBackgroundColor);
+                if (action.type == ItemSwipeAction.Type.NONE) return;
+                bgPaint.setColor(action.type == ItemSwipeAction.Type.DELETE
+                        ? deleteBackgroundColor : moveBackgroundColor);
+                c.drawRect(
+                        itemView.getRight() + dX,
+                        itemView.getTop(),
+                        itemView.getRight(),
+                        itemView.getBottom(),
+                        bgPaint);
+            } else {
+                // Swiping right — revealed area is on the LEFT
+                ItemSwipeAction action = ItemSwipeAction.forRightSwipe(cat, moveBackgroundColor);
+                if (action.type == ItemSwipeAction.Type.NONE) return;
+                bgPaint.setColor(moveBackgroundColor);
+                c.drawRect(
+                        itemView.getLeft(),
+                        itemView.getTop(),
+                        itemView.getLeft() + dX,
+                        itemView.getBottom(),
+                        bgPaint);
+            }
         }
     }
 }

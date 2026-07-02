@@ -112,14 +112,12 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
                 this,
                 viewModel,
                 listHorizontalPadding,
-                listBottomPadding + bottomEdgeHeight,
-                panelDragListener.asRecyclerBlankAreaListener()
+                listBottomPadding + bottomEdgeHeight
         );
         columnPager.setAdapter(columnPagerAdapter);
         columnPager.setOffscreenPageLimit(2);
         // Disable ViewPager2 built-in touch input so it cannot steal card swipes.
-        // Panel navigation is driven entirely by PanelDragListener (tab bar, bottom
-        // edge, and blank areas within each column RecyclerView).
+        // Panel navigation is via PanelDragListener on the tab bar and bottom edge zone.
         columnPager.setUserInputEnabled(false);
         columnPager.setCurrentItem(ListCategory.INBOX.getPanelIndex(), false);
 
@@ -225,14 +223,9 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
         View tabBar = findViewById(R.id.tab_bar);
         tabBar.setOnTouchListener(dragListener);
         bottomEdgeSwipeZone.setOnTouchListener(dragListener);
-        columnPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageScrollStateChanged(int state) {
-                boolean idle = state == ViewPager2.SCROLL_STATE_IDLE;
-                tabBar.setOnTouchListener(idle ? dragListener : null);
-                bottomEdgeSwipeZone.setOnTouchListener(idle ? dragListener : null);
-            }
-        });
+        // Note: we intentionally do NOT remove these listeners on scroll state changes.
+        // Removing mid-gesture (when state changes to DRAGGING) would cut the fake drag
+        // short. PanelDragListener's own `tracking` flag prevents double-entry.
     }
 
     private void scrollToPanel(int index) {
