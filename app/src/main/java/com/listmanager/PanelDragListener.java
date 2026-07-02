@@ -106,7 +106,7 @@ public class PanelDragListener {
                 }
 
                 if (dragging) {
-                    viewPager.fakeDragBy(-deltaX);
+                    viewPager.fakeDragBy(deltaX);
                 }
                 lastX = event.getX();
                 lastY = event.getY();

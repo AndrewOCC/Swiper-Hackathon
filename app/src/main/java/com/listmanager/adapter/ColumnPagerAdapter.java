@@ -29,6 +29,7 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
 
     private final LifecycleOwner lifecycleOwner;
     private final MainViewModel viewModel;
+    private final RecyclerView.OnItemTouchListener panelBlankAreaListener;
     private int horizontalPadding;
     private int bottomPadding;
     private int extraHorizontalInset;
@@ -41,11 +42,13 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
     public ColumnPagerAdapter(@NonNull LifecycleOwner lifecycleOwner,
                               @NonNull MainViewModel viewModel,
                               int horizontalPadding,
-                              int bottomPadding) {
+                              int bottomPadding,
+                              @NonNull RecyclerView.OnItemTouchListener panelBlankAreaListener) {
         this.lifecycleOwner = lifecycleOwner;
         this.viewModel = viewModel;
         this.horizontalPadding = horizontalPadding;
         this.bottomPadding = bottomPadding;
+        this.panelBlankAreaListener = panelBlankAreaListener;
 
         editingItemObserver = editingItemId -> {
             for (ColumnPageViewHolder holder : pageHolders) {
@@ -161,6 +164,8 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             );
             swipeController.attach();
 
+            recyclerView.addOnItemTouchListener(panelBlankAreaListener);
+
             listAdapter.setActionListener(new ListItemAdapter.ItemActionListener() {
                 @Override
                 public void onEditItem(int position) {
@@ -230,6 +235,7 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             if (swipeController != null) {
                 swipeController.detach();
             }
+            recyclerView.removeOnItemTouchListener(panelBlankAreaListener);
             listAdapter.setActionListener(null);
             swipeController = null;
             itemsObserver = null;

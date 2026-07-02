@@ -112,7 +112,8 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
                 this,
                 viewModel,
                 listHorizontalPadding,
-                listBottomPadding + bottomEdgeHeight
+                listBottomPadding + bottomEdgeHeight,
+                panelDragListener.asRecyclerBlankAreaListener()
         );
         columnPager.setAdapter(columnPagerAdapter);
         columnPager.setOffscreenPageLimit(2);
