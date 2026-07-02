@@ -162,19 +162,17 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
                         public void onSwipeRight(int position) {
                             viewModel.swipeRight(boundCategory, position);
                         }
-
-                        @Override
-                        public void onItemClick(int position) {
-                            String itemId = listAdapter.getItemIdAt(position);
-                            if (itemId == null || itemId.equals(viewModel.getEditingItemIdValue())) {
-                                return;
-                            }
-                            listAdapter.finishEditing(recyclerView);
-                            viewModel.startEditingItem(itemId);
-                        }
                     }
             );
-            listAdapter.setSwipeController(swipeController);
+            swipeController.attach();
+            listAdapter.setItemClickListener(position -> {
+                String itemId = listAdapter.getItemIdAt(position);
+                if (itemId == null || itemId.equals(viewModel.getEditingItemIdValue())) {
+                    return;
+                }
+                listAdapter.finishEditing(recyclerView);
+                viewModel.startEditingItem(itemId);
+            });
 
             itemsObserver = items -> {
                 listAdapter.setEditingItemId(viewModel.getEditingItemIdValue());
@@ -224,7 +222,10 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
             if (itemsObserver != null && boundCategory != null) {
                 viewModel.observeItems(boundCategory).removeObserver(itemsObserver);
             }
-            listAdapter.setSwipeController(null);
+            if (swipeController != null) {
+                swipeController.detach();
+            }
+            listAdapter.setItemClickListener(null);
             swipeController = null;
             itemsObserver = null;
             boundCategory = null;

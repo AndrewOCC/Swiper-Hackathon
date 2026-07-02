@@ -28,10 +28,14 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         void onSaveItem(@NonNull String id, @NonNull String title, @NonNull String description);
     }
 
+    public interface ItemClickListener {
+        void onItemClick(int position);
+    }
+
     private final List<ListItem> items = new ArrayList<>();
     private EditCallback editCallback;
     @Nullable
-    private ListItemSwipeController swipeController;
+    private ItemClickListener itemClickListener;
     @Nullable
     private String editingItemId;
     @Nullable
@@ -41,8 +45,8 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         this.editCallback = editCallback;
     }
 
-    public void setSwipeController(@Nullable ListItemSwipeController swipeController) {
-        this.swipeController = swipeController;
+    public void setItemClickListener(@Nullable ItemClickListener itemClickListener) {
+        this.itemClickListener = itemClickListener;
     }
 
     public void setEditingItemId(@Nullable String editingItemId) {
@@ -121,8 +125,15 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         ListItem item = items.get(position);
         boolean editing = item.getId().equals(editingItemId);
         holder.bind(item, editing, editCallback);
-        if (swipeController != null) {
-            swipeController.attachToItem(holder.itemView, position);
+        if (!editing && itemClickListener != null) {
+            holder.itemView.findViewById(R.id.swipe_foreground).setOnClickListener(view -> {
+                int adapterPosition = holder.getBindingAdapterPosition();
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    itemClickListener.onItemClick(adapterPosition);
+                }
+            });
+        } else {
+            holder.itemView.findViewById(R.id.swipe_foreground).setOnClickListener(null);
         }
         if (editing && item.getId().equals(pendingFocusItemId)) {
             holder.focusTitle();

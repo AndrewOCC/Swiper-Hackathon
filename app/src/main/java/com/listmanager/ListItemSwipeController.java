@@ -28,17 +28,15 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * Handles horizontal swipe gestures on individual list rows. Attached per item so
- * vertical scrolling and panel swipes are not blocked at the RecyclerView level.
+ * Handles horizontal card swipes at the RecyclerView level, intercepting only after a
+ * horizontal gesture is confirmed so vertical scrolling and taps keep working normally.
  */
-public class ListItemSwipeController {
+public class ListItemSwipeController implements RecyclerView.OnItemTouchListener {
 
     public interface Callback {
         void onSwipeLeft(int position);
 
         void onSwipeRight(int position);
-
-        void onItemClick(int position);
     }
 
     private final RecyclerView recyclerView;
@@ -62,9 +60,9 @@ public class ListItemSwipeController {
     private float finalDelta;
     private float alpha;
     private boolean swiping;
-    private int activePosition = RecyclerView.NO_POSITION;
+    private int downPosition = RecyclerView.NO_POSITION;
     private int animatingPosition = RecyclerView.NO_POSITION;
-    private View activeView;
+    private View downView;
     private View foregroundView;
     private LinearLayout backgroundLeft;
     private LinearLayout backgroundRight;
@@ -100,56 +98,81 @@ public class ListItemSwipeController {
         deleteTextColor = ContextCompat.getColor(context, android.R.color.white);
     }
 
-    public void attachToItem(@NonNull View itemView, int position) {
-        itemView.setOnTouchListener((view, event) -> handleItemTouch(view, position, event));
+    public void attach() {
+        recyclerView.addOnItemTouchListener(this);
     }
 
-    private boolean handleItemTouch(@NonNull View itemView, int position, @NonNull MotionEvent event) {
+    public void detach() {
+        resetGestureState(true);
+        cancelSwipeAnimation();
+        recyclerView.removeOnItemTouchListener(this);
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent event) {
+        processTouch(event);
+        return swiping;
+    }
+
+    @Override
+    public void onTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent event) {
+        processTouch(event);
+    }
+
+    @Override
+    public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+        if (disallowIntercept) {
+            resetGestureState(true);
+            cancelSwipeAnimation();
+        }
+    }
+
+    private void processTouch(@NonNull MotionEvent event) {
         if (viewWidth < 2) {
             viewWidth = recyclerView.getWidth();
         }
 
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                if (animatingPosition == position || isEditingPosition(position)) {
-                    return false;
-                }
-                if (activePosition != RecyclerView.NO_POSITION
-                        && activePosition != position
-                        && !swiping) {
+                downView = recyclerView.findChildViewUnder(event.getX(), event.getY());
+                if (downView == null) {
                     resetGestureState(true);
+                    break;
                 }
-                activePosition = position;
-                activeView = itemView;
-                bindSwipeViews(itemView);
-                if (foregroundView == null) {
-                    resetGestureState(false);
-                    return false;
+                downPosition = recyclerView.getChildAdapterPosition(downView);
+                if (downPosition == RecyclerView.NO_POSITION
+                        || downPosition == animatingPosition
+                        || isEditingPosition(downPosition)) {
+                    resetGestureState(true);
+                    break;
+                }
+                bindSwipeViews(downView);
+                if (!hasSwipeViews()) {
+                    resetGestureState(true);
+                    break;
                 }
                 alpha = foregroundView.getAlpha();
-                downX = event.getRawX();
-                downY = event.getRawY();
+                downX = event.getX();
+                downY = event.getY();
                 if (velocityTracker != null) {
                     velocityTracker.recycle();
                 }
                 velocityTracker = VelocityTracker.obtain();
                 velocityTracker.addMovement(event);
-                return false;
+                break;
 
             case MotionEvent.ACTION_CANCEL:
-                if (activeView != itemView) {
-                    return false;
-                }
                 cancelSwipeAnimation();
                 resetGestureState(true);
-                return swiping;
+                break;
 
             case MotionEvent.ACTION_UP:
-                if (activeView != itemView || velocityTracker == null) {
-                    return false;
+                if (velocityTracker == null || downView == null) {
+                    resetGestureState(true);
+                    break;
                 }
 
-                finalDelta = event.getRawX() - downX;
+                finalDelta = event.getX() - downX;
                 velocityTracker.addMovement(event);
                 velocityTracker.computeCurrentVelocity(1000);
                 float velocityX = velocityTracker.getXVelocity();
@@ -169,71 +192,59 @@ public class ListItemSwipeController {
                     dismissToRight = velocityX > 0;
                 }
 
-                boolean consumed = swiping;
-                if (dismiss && position != animatingPosition) {
+                if (dismiss && downPosition != animatingPosition) {
                     animateCompletion(dismissToRight);
                 } else {
-                    if (!swiping && !dismiss) {
-                        float finalDeltaY = event.getRawY() - downY;
-                        if (Math.abs(finalDelta) < slop && Math.abs(finalDeltaY) < slop) {
-                            callback.onItemClick(position);
-                            consumed = true;
-                        }
-                    }
                     cancelSwipeAnimation();
                 }
                 resetGestureState(true);
-                return consumed;
+                break;
 
             case MotionEvent.ACTION_MOVE:
-                if (activeView != itemView || velocityTracker == null || !hasSwipeViews()) {
-                    return false;
+                if (velocityTracker == null || downView == null || !hasSwipeViews()) {
+                    break;
                 }
 
                 velocityTracker.addMovement(event);
-                float deltaX = event.getRawX() - downX;
-                float deltaY = event.getRawY() - downY;
+                float deltaX = event.getX() - downX;
+                float deltaY = event.getY() - downY;
 
-                if (!swiping && Math.abs(deltaY) > slop && Math.abs(deltaY) > Math.abs(deltaX)) {
+                if (!swiping && Math.abs(deltaY) > slop && Math.abs(deltaY) >= Math.abs(deltaX)) {
                     resetGestureState(true);
-                    return false;
+                    break;
                 }
 
                 if (!swiping && Math.abs(deltaX) > slop && Math.abs(deltaY) < Math.abs(deltaX) / 2f) {
                     activeAction = resolveAction(deltaX);
                     if (activeAction.type == ItemSwipeAction.Type.NONE) {
                         resetGestureState(true);
-                        return false;
+                        break;
                     }
                     applyBackground(activeAction, deltaX < 0);
                     swiping = true;
-                    swipeAnchorX = event.getRawX();
+                    swipeAnchorX = event.getX();
                     blockPanelNavigation(true);
-                    itemView.setTranslationZ(recyclerView.getResources().getDisplayMetrics().density * 8f);
+                    downView.setTranslationZ(recyclerView.getResources().getDisplayMetrics().density * 8f);
                 }
 
                 if (swiping && activeAction != null) {
-                    float translation = event.getRawX() - swipeAnchorX;
-                    itemView.setTranslationX(translation);
+                    float translation = event.getX() - swipeAnchorX;
+                    downView.setTranslationX(translation);
                     if (activeAction.type == ItemSwipeAction.Type.DELETE) {
                         float progress = Math.min(1f, Math.abs(translation) / (viewWidth * 0.75f));
                         foregroundView.setAlpha(Math.max(0.2f, alpha * (1f - progress * 0.8f)));
                     } else {
                         foregroundView.setAlpha(alpha);
                     }
-                    return true;
                 }
-                return false;
+                break;
 
             default:
-                return false;
+                break;
         }
     }
 
     private boolean isEditingPosition(int position) {
-        if (position == RecyclerView.NO_POSITION) {
-            return false;
-        }
         String editingId = editingItemIdSupplier.get();
         if (editingId == null) {
             return false;
@@ -301,9 +312,9 @@ public class ListItemSwipeController {
     }
 
     private void animateCompletion(boolean dismissToRight) {
-        final View itemView = activeView;
+        final View itemView = downView;
         final View foreground = foregroundView;
-        final int position = activePosition;
+        final int position = downPosition;
         final ItemSwipeAction action = activeAction;
         final boolean swipeRight = dismissToRight;
 
@@ -342,9 +353,9 @@ public class ListItemSwipeController {
     }
 
     private void cancelSwipeAnimation() {
-        if (activeView != null) {
-            activeView.animate().cancel();
-            activeView.animate()
+        if (downView != null) {
+            downView.animate().cancel();
+            downView.animate()
                     .translationX(0)
                     .translationZ(0f)
                     .setDuration(animationTime)
@@ -419,7 +430,7 @@ public class ListItemSwipeController {
         }
         downX = 0;
         downY = 0;
-        activeView = null;
+        downView = null;
         foregroundView = null;
         backgroundLeft = null;
         backgroundRight = null;
@@ -427,7 +438,7 @@ public class ListItemSwipeController {
         rightLabel = null;
         rightIcon = null;
         activeAction = null;
-        activePosition = RecyclerView.NO_POSITION;
+        downPosition = RecyclerView.NO_POSITION;
         swiping = false;
     }
 
