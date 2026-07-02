@@ -100,7 +100,7 @@ public class PanelDragListener {
                             || Math.abs(totalDeltaX) <= Math.abs(totalDeltaY)) {
                         lastX = event.getX();
                         lastY = event.getY();
-                        return true;
+                        return false;
                     }
                     dragging = viewPager.beginFakeDrag();
                 }
@@ -128,7 +128,7 @@ public class PanelDragListener {
                 }
                 tracking = false;
                 dragging = false;
-                return true;
+                return dragging;
 
             default:
                 return false;

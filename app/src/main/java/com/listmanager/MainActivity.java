@@ -97,6 +97,12 @@ public class MainActivity extends AppCompatActivity implements PanelDragListener
         observeViewModel();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        columnPager.setUserInputEnabled(true);
+    }
+
     private int resolveThemeColor(int attr) {
         TypedValue typedValue = new TypedValue();
         getTheme().resolveAttribute(attr, typedValue, true);

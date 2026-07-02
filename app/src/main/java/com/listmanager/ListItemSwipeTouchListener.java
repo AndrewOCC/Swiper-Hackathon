@@ -73,6 +73,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
     private ItemSwipeAction activeAction;
     private boolean paused;
     private boolean panelNavigationBlocked;
+    private boolean trackingCard;
     private VelocityTracker velocityTracker;
 
     private final List<PendingDismissData> pendingDismisses = new ArrayList<>();
@@ -109,7 +110,17 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
 
     @Override
     public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent event) {
-        return handleTouchEvent(event);
+        handleTouchEvent(event);
+        if (swiping) {
+            return true;
+        }
+        int action = event.getActionMasked();
+        if (trackingCard && (action == MotionEvent.ACTION_MOVE
+                || action == MotionEvent.ACTION_UP
+                || action == MotionEvent.ACTION_CANCEL)) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -140,16 +151,18 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                         break;
                     }
                     bindSwipeViews(downView);
-                    if (downPosition != RecyclerView.NO_POSITION) {
+                    if (downPosition != RecyclerView.NO_POSITION && foregroundView != null) {
                         alpha = foregroundView.getAlpha();
                         downX = event.getRawX();
                         downY = event.getRawY();
                         velocityTracker = VelocityTracker.obtain();
                         velocityTracker.addMovement(event);
-                        blockPanelNavigation(true);
+                        trackingCard = true;
                     } else {
                         resetGestureState(false);
                     }
+                } else {
+                    trackingCard = false;
                 }
                 break;
 
@@ -198,7 +211,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                if (velocityTracker == null || paused || foregroundView == null) {
+                if (velocityTracker == null || paused || !hasSwipeViews()) {
                     break;
                 }
 
@@ -216,6 +229,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                     applyBackground(activeAction, deltaX < 0);
                     swiping = true;
                     swipeAnchorX = event.getRawX();
+                    blockPanelNavigation(true);
                     downView.setTranslationZ(recyclerView.getResources().getDisplayMetrics().density * 8f);
                 }
 
@@ -281,6 +295,14 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         leftLabel = itemView.findViewById(R.id.swipe_left_label);
         rightLabel = itemView.findViewById(R.id.swipe_right_label);
         rightIcon = itemView.findViewById(R.id.swipe_right_icon);
+    }
+
+    private boolean hasSwipeViews() {
+        return foregroundView != null
+                && backgroundLeft != null
+                && backgroundRight != null
+                && leftLabel != null
+                && rightLabel != null;
     }
 
     private ItemSwipeAction resolveAction(float deltaX) {
@@ -459,6 +481,7 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         activeAction = null;
         downPosition = ListView.INVALID_POSITION;
         swiping = false;
+        trackingCard = false;
     }
 
     private void blockPanelNavigation(boolean block) {
