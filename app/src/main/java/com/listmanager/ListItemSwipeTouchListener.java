@@ -35,6 +35,8 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
         void onSwipeLeft(int position);
 
         void onSwipeRight(int position);
+
+        void onItemClick(int position);
     }
 
     private final RecyclerView recyclerView;
@@ -181,6 +183,12 @@ public class ListItemSwipeTouchListener implements RecyclerView.OnItemTouchListe
                 if (dismiss && downPosition != animatingPosition && downPosition != ListView.INVALID_POSITION) {
                     animateCompletion(dismissToRight);
                 } else {
+                    if (!swiping && !dismiss && downPosition != ListView.INVALID_POSITION) {
+                        float finalDeltaY = event.getRawY() - downY;
+                        if (Math.abs(finalDelta) < slop && Math.abs(finalDeltaY) < slop) {
+                            callback.onItemClick(downPosition);
+                        }
+                    }
                     cancelSwipeAnimation();
                 }
                 resetGestureState(true);

@@ -172,6 +172,16 @@ public class ColumnPagerAdapter extends RecyclerView.Adapter<ColumnPagerAdapter.
                         public void onSwipeRight(int position) {
                             viewModel.swipeRight(boundCategory, position);
                         }
+
+                        @Override
+                        public void onItemClick(int position) {
+                            String itemId = listAdapter.getItemIdAt(position);
+                            if (itemId == null || itemId.equals(viewModel.getEditingItemIdValue())) {
+                                return;
+                            }
+                            listAdapter.finishEditing(recyclerView);
+                            viewModel.startEditingItem(itemId);
+                        }
                     }
             );
             recyclerView.addOnItemTouchListener(itemSwipeListener);

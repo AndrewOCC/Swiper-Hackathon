@@ -43,6 +43,20 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         notifyDataSetChanged();
     }
 
+    public void finishEditing(@NonNull RecyclerView recyclerView) {
+        if (editingItemId == null) {
+            return;
+        }
+        int position = findPositionById(editingItemId);
+        if (position < 0) {
+            return;
+        }
+        ItemViewHolder holder = (ItemViewHolder) recyclerView.findViewHolderForAdapterPosition(position);
+        if (holder != null) {
+            holder.saveAndClose(editCallback);
+        }
+    }
+
     public void requestFocusForItem(@NonNull RecyclerView recyclerView, @NonNull String itemId) {
         pendingFocusItemId = itemId;
         int position = findPositionById(itemId);
@@ -229,7 +243,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
             }
         }
 
-        private void saveAndClose(@Nullable EditCallback editCallback) {
+        void saveAndClose(@Nullable EditCallback editCallback) {
             if (saved || boundItem == null || editCallback == null) {
                 return;
             }

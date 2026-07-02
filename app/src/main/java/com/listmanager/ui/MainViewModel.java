@@ -128,6 +128,10 @@ public class MainViewModel extends AndroidViewModel {
         }
     }
 
+    public void startEditingItem(@NonNull String itemId) {
+        editingItemId.setValue(itemId);
+    }
+
     public void clearEditingItem() {
         editingItemId.setValue(null);
     }
