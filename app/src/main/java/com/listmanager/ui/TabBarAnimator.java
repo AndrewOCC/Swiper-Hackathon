@@ -11,6 +11,8 @@ public class TabBarAnimator {
 
     private static final float SELECTED_ALPHA = 1f;
     private static final float UNSELECTED_ALPHA = 0.4f;
+    private static final float SELECTED_SCALE = 1.12f;
+    private static final float UNSELECTED_SCALE = 0.88f;
 
     private final TextView[] tabs;
     private final View indicator;
@@ -57,7 +59,15 @@ public class TabBarAnimator {
 
     private void measureAndApplyInitialState() {
         measureIndicator();
+        updateTabPivots();
         onPageScrolled(1, 0f);
+    }
+
+    private void updateTabPivots() {
+        for (TextView tab : tabs) {
+            tab.setPivotX(tab.getWidth() / 2f);
+            tab.setPivotY(tab.getHeight() / 2f);
+        }
     }
 
     private void measureIndicator() {
@@ -110,9 +120,14 @@ public class TabBarAnimator {
             float distance = Math.abs(scrollPosition - i);
             float selection = Math.max(0f, 1f - distance);
             float alpha = UNSELECTED_ALPHA + (SELECTED_ALPHA - UNSELECTED_ALPHA) * selection;
-            tabs[i].setAlpha(alpha);
-            tabs[i].setTypeface(null, selection > 0.5f ? Typeface.BOLD : Typeface.NORMAL);
-            tabs[i].setTextColor(blendColors(unselectedColor, selectedColor, selection));
+            float scale = UNSELECTED_SCALE + (SELECTED_SCALE - UNSELECTED_SCALE) * selection;
+
+            TextView tab = tabs[i];
+            tab.setAlpha(alpha);
+            tab.setScaleX(scale);
+            tab.setScaleY(scale);
+            tab.setTypeface(null, selection > 0.5f ? Typeface.BOLD : Typeface.NORMAL);
+            tab.setTextColor(blendColors(unselectedColor, selectedColor, selection));
         }
     }
 

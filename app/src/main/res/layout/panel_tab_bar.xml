@@ -5,6 +5,8 @@
     android:id="@+id/tab_bar_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     android:paddingBottom="4dp">
 
     <LinearLayout
@@ -24,6 +26,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:baselineAligned="false"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:orientation="horizontal">
 
             <TextView
